@@ -1,0 +1,42 @@
+exclude: "^$|deploy|scripts|tmp"
+fail_fast: false
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: check-toml
+      # - id: debug-statements
+      #   args: ["--print-changes"]
+
+  - repo: local
+    hooks:
+      - id: update-uv-lock
+        name: ensure uv.lock is up-to-date
+        entry: bash -c 'uv lock && git diff --exit-code uv.lock > /dev/null'
+        language: system
+        files: ^uv\.lock$
+        pass_filenames: false
+
+      - id: update-requirements-txt
+        name: ensure requirements.txt is up-to-date
+        entry: bash -c 'uv pip compile pyproject.toml -o requirements.txt > /dev/null && git diff --exit-code requirements.txt > /dev/null'
+        language: system
+        files: ^pyproject\.toml$
+        pass_filenames: false
+
+      - id: pyright
+        name: pyright
+        entry: bash -c 'uv run pyright'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+      - id: ruff-format

@@ -1,0 +1,10 @@
+# Ignore everything
+
+**
+
+# White-list what we need
+
+!requirements*.txt
+!*.py
+!migrations/
+!edgar_funcs

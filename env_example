@@ -1,0 +1,19 @@
+# example .env file
+
+# OPTIONAL: when not set, SQLALCHEMY_DATABASE_URI will be used
+#           this is required when the app uses async database driver, i.e. asyncpg,
+#           because Alembic does not support async drivers
+#
+# ALEMBIC_DATABASE_URI=postgresql+psycopg://username:password@server:port/database
+
+# REQUIRED: main database connection
+SQLALCHEMY_DATABASE_URI=postgresql+psycopg://username:password@server:port/database
+
+# OPTIONAL: when not set, a default sqlite3 database will be created.
+#           the conftest.py will check if the test database exists, and create it if not
+#           and drop it after running tests unless KEEP_TEST_DB is set to Y
+# TEST_DATABASE_URI=postgresql+psycopg://username:password@server:port/test_database
+# KEEP_TEST_DB=N
+
+# univorn settings
+WORKERS=1
