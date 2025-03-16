@@ -30,7 +30,11 @@ def test_get_queries_embedding():
         assert queries_pair.is_ready()
 
 
-def test_get_filing_embedding():
+def test_one_filing_full_lifecyele():
+    """
+    full lifecycle of a filing
+    download, chunk, get embedding, save and load
+    """
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="883622", accession_number="0001137439-24-001242")
         metadata = {
