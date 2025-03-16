@@ -1,26 +1,8 @@
+# Process SEC filings on EDGAR site
 
-# Welcome to Python project
+This project contains the Google Cloud Functions that proesses the filing html files from EDGAR site.
 
-## Cookiecutter template for Python3 project
+For 485BPOS filings:
+* Split a filing into mutliple text chunks and generate embeddings
+* Extract information from a filing using a LLM with RAG (Retrieval Augmented Generation)
 
-This is a [cookiecutter](https://www.cookiecutter.io/) template for generic Python3 project with preconfigured with the following tools:
-
-* [uv](https://docs.astral.sh/uv/)
-* [ruff](https://docs.astral.sh/ruff/)
-* [pre-commit](https://pre-commit.com/)
-* [pyright](https://github.com/microsoft/pyright)
-* VS Code support
-
-## Setup
-
-The easiest way to get started is use [Visual Studio Code with devcontainer](https://code.visualstudio.com/docs/devcontainers/containers)
-
-
-```shell
-
-# create virtualenv and install dependencies
-uv sync
-source .venv/bin/activate
-ruff check --fix .
-
-```

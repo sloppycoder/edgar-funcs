@@ -24,3 +24,6 @@ pytest_junit.xml
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# local project files
+edgar*.json

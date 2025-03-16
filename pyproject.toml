@@ -1,13 +1,19 @@
 [project]
 name = "edgar-funcs"
 version = "0.1.0"
-description = "Cookiecutter template for generic Python 3 project with tooling configuration for testing, linting and IDE support"
+description = "Cloud funtions for processing SEC filings on EDGAR site"
 authors = [{ name = "Li Lin", email = "guru.lin@gmail.com" }]
 readme = "README.md"
 
 requires-python = ">= 3.12"
 dependencies = [
-    "python-dotenv >= 1.0.0",
+    "python-dotenv >= 1.0.1",
+    "beautifulsoup4>=4.12.3",
+    "en-core-web-sm",
+    "html2text>=2024.2.26",
+    "requests>=2.32.3",
+    "spacy>=3.8.3",
+    "tenacity>=9.0.0",
 ]
 
 
@@ -25,6 +31,9 @@ dev = [
 
 [tool.uv]
 managed = true
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.pytest.ini_options]
 minversion = "6.0"
