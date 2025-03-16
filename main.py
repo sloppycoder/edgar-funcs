@@ -1,4 +1,3 @@
-from typing import Iterator, AsyncIterator
 
 
 if __name__ == "__main__":
