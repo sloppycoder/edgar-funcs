@@ -28,8 +28,6 @@ def test_parse_idx_filename():
 def test_parse_485bpos_filing():
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="883622", accession_number="0001137439-24-001242")
-
-        # filing = SECFiling(idx_filename="edgar/data/1002427/0001133228-24-004879.txt")
         html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
 
         assert filing.cik == "883622" and filing.date_filed == "2024-08-14"
