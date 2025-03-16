@@ -1,13 +1,20 @@
 import logging
+import os
+import pickle
 from datetime import datetime
+from pathlib import Path
 from typing import Any
+
+from google.cloud import storage
 
 from edgar import SECFiling
 
-from .chunking import chunk_text, trim_html_content
+from .chunking import ALORITHM_VERSION, chunk_text, trim_html_content
 from .embedding import GEMINI_EMBEDDING_MODEL, OPENAI_EMBEDDING_MODEL, batch_embedding
 
 logger = logging.getLogger(__name__)
+
+gcs_client = storage.Client()
 
 
 class TextChunkWithEmbedding:
@@ -50,6 +57,53 @@ class TextChunkWithEmbedding:
         self.model = model
 
 
+def save_chunks(chunks: TextChunkWithEmbedding) -> None:
+    if chunks.is_ready():
+        path = _blob_path(chunks)
+        bucket_name, prefix = _storage_prefix()
+        if bucket_name:
+            # means it's GCS bucket
+            bucket = gcs_client.bucket(bucket_name)
+            blob = bucket.blob(prefix + path)
+            blob.upload_from_string(pickle.dumps(chunks))
+        else:
+            # save to local file system
+            output_path = Path(prefix) / path
+            os.makedirs(output_path.parent, exist_ok=True)
+            with open(output_path, "wb") as f:
+                pickle.dump(chunks, f)
+    else:
+        raise ValueError("cannot save without embedding data")
+
+
+def load_chunks(
+    cik: str,
+    accession_number: str,
+    model: str,
+    dimension: int,
+    chunk_version: str = ALORITHM_VERSION,
+) -> TextChunkWithEmbedding:
+    path = _blob_path(
+        cik=cik,
+        accession_number=accession_number,
+        model=model,
+        dimension=dimension,
+        chunk_version=chunk_version,
+    )
+    bucket_name, prefix = _storage_prefix()
+    if bucket_name:
+        # means it's GCS bucket
+        bucket = gcs_client.bucket(bucket_name)
+        blob = bucket.blob(prefix + path)
+        chunks = pickle.loads(blob.download_as_bytes())
+    else:
+        # load from local file system
+        output_path = Path(prefix) / path
+        with open(output_path, "rb") as f:
+            chunks = pickle.load(f)
+    return chunks
+
+
 def chunk_filing(filing: SECFiling, method: str = "spacy"):
     if method != "spacy":
         raise ValueError(f"Unsupported chunking method {method}")
@@ -66,3 +120,42 @@ def chunk_filing(filing: SECFiling, method: str = "spacy"):
         f"chunking {filing.cik}/{filing.accession_number} into {len(chunks)} chunks took {elapsed_t.total_seconds()} seconds"  # noqa E501
     )
     return chunks
+
+
+def _blob_path(
+    chunks: TextChunkWithEmbedding | None = None,
+    cik: str = "",
+    accession_number: str = "",
+    chunk_version: str = "",
+    model: str = "",
+    dimension: int = 768,
+):
+    # return the path for storing a TextChunkWithEmbedding object
+    if chunks and chunks.is_ready():
+        # chunks object override rest of the parameters
+        meta = chunks.medata
+        cik = meta.get("cik") or "0"
+        accession_number = meta.get("accession_number") or "0000000000-00-000000"
+        chunk_version = meta.get("chunk_version") or ALORITHM_VERSION
+        model = meta.get("model") or GEMINI_EMBEDDING_MODEL
+        dimension = meta.get("dimension") or 768
+    elif cik and accession_number and model and dimension:
+        chunk_version = chunk_version or ALORITHM_VERSION
+    else:
+        raise ValueError("Must specifcy cik, accession_number, model, dimension")
+
+    return f"{chunk_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
+
+
+def _storage_prefix(storage_base_path=os.environ.get("STORAGE_PREFIX", "")):
+    # return tuple of (bucket_name, prefix)
+    # if the env var does not beginw with "gs://", returns ""
+    if storage_base_path.startswith("gs://"):
+        parts = storage_base_path[5:].split("/", 1)
+        return parts[0], parts[1] if len(parts) > 1 else ""
+    else:
+        if storage_base_path.startswith("/"):
+            return None, storage_base_path
+        else:
+            local_path = Path(__file__).parent.parent / storage_base_path
+            return None, str(local_path)

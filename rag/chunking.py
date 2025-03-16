@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 
 DEFAULT_TEXT_CHUNK_SIZE = 3500
-ALORITHM_VERSION = 3
+ALORITHM_VERSION = "3"
 
 
 def chunk_text(

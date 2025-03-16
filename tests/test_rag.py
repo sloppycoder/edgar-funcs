@@ -1,7 +1,14 @@
 from unittest.mock import patch
 
 from edgar import SECFiling
-from rag import TextChunkWithEmbedding, chunk_filing
+from rag import (
+    TextChunkWithEmbedding,
+    _storage_prefix,
+    chunk_filing,
+    load_chunks,
+    save_chunks,
+)
+from rag.embedding import GEMINI_EMBEDDING_MODEL
 from tests.utils import mock_embedding, mock_file_content
 
 
@@ -30,6 +37,8 @@ def test_get_filing_embedding():
             "cik": filing.cik,
             "accession_number": filing.accession_number,
             "date_filed": filing.date_filed,
+            "model": GEMINI_EMBEDDING_MODEL,
+            "dimension": 768,
         }
         text_chunks = chunk_filing(filing)
         assert text_chunks
@@ -41,3 +50,22 @@ def test_get_filing_embedding():
         chunks = TextChunkWithEmbedding(text_chunks, metadata=metadata)
         chunks.get_embeddings()
         assert chunks.is_ready()
+
+    save_chunks(chunks)
+    restored_chunks = load_chunks(
+        cik="883622",
+        accession_number="0001137439-24-001242",
+        model=GEMINI_EMBEDDING_MODEL,
+        dimension=768,
+    )
+    assert restored_chunks.is_ready()
+    assert chunks.texts == restored_chunks.texts
+    assert chunks.embeddings == restored_chunks.embeddings
+
+
+def test_storage_prefix():
+    assert _storage_prefix("gs://bucket/prefix") == ("bucket", "prefix")
+    assert _storage_prefix("gs://bucket") == ("bucket", "")
+    bucket_name, prefix = _storage_prefix("tmp")
+    assert bucket_name is None
+    assert prefix.endswith("tmp")
