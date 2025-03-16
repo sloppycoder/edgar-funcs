@@ -194,7 +194,7 @@ def edgar_file(
         return response.text
     elif response.status_code == 429:
         # TODO: add retrying logic and etc to make it more robust
-        logger.debug(f"Failed to download from {url}: {response.status_code}")
+        logger.debug(f"Failed to download from {idx_filename}: {response.status_code}")
         raise RateLimitedException(f"Rate limited: {response.status_code}")
     else:
         logger.info(f"Failed to download from {idx_filename}: {response.status_code}")
