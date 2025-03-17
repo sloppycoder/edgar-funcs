@@ -20,7 +20,7 @@ steps:
       - "--region=${_REGION}"
       - "--runtime=${_RUNTIME}"
       - "--memory=2G"
-      - "--timeout=1800s"
+      - "--timeout=540s"
       - "--max-instances=5"
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=edgar_processor"
