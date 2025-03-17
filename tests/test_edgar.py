@@ -27,11 +27,11 @@ def test_parse_idx_filename():
 
 def test_parse_485bpos_filing():
     with patch("edgar.edgar_file", side_effect=mock_file_content):
-        filing = SECFiling(cik="883622", accession_number="0001137439-24-001242")
+        filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
         html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
 
-        assert filing.cik == "883622" and filing.date_filed == "2024-08-14"
-        assert filing.accession_number == "0001137439-24-001242"
-        assert len(filing.documents) == 93
-        assert html_path.endswith("ivyfunds08142024485bpos.htm")
+        assert filing.cik == "1002427" and filing.date_filed == "2024-04-29"
+        assert filing.accession_number == "0001133228-24-004879"
+        assert len(filing.documents) == 26
+        assert html_path.endswith("msif-html7854_485bpos.htm")
         assert html_content and "N-1A" in html_content
