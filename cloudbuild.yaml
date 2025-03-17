@@ -1,0 +1,30 @@
+substitutions:
+  _REGION: "us-central1"
+  _RUNTIME: "python312"
+  _REQ_TOPIC: "edgarai-funcs-req"
+  _RES_TOPIC: "edgarai-funcs-res"
+  _BUCKET_ID: "edgar_666"
+  _LOG_LEVEL: "INFO"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "functions"
+      - "deploy"
+      - "edgar_processor"
+      - "--gen2"
+      - "--region=${_REGION}"
+      - "--runtime=${_RUNTIME}"
+      - "--memory=2G"
+      - "--timeout=1800s"
+      - "--max-instances=5"
+      - "--trigger-topic=${_REQ_TOPIC}"
+      - "--entry-point=edgar_processor"
+      - "--source"
+      - "."
+      - "--set-env-vars"
+      - "GCS_BUCKET_ID=${_BUCKET_ID},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
