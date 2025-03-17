@@ -88,9 +88,6 @@ Please remove the leading $ sign and comma from compensation Amount.
 """  # noqa: E501
 
 
-gcs_client = storage.Client()
-
-
 class TrusteeComp(TypedDict):
     cik: str
     accession_number: str
@@ -151,6 +148,7 @@ def save_chunks(chunks: TextChunksWithEmbedding) -> None:
         bucket_name, prefix = _storage_prefix()
         if bucket_name:
             # means it's GCS bucket
+            gcs_client = storage.Client()
             bucket = gcs_client.bucket(bucket_name)
             blob = bucket.blob(prefix + path)
             blob.upload_from_string(pickle.dumps(chunks))
@@ -181,6 +179,7 @@ def load_chunks(
     bucket_name, prefix = _storage_prefix()
     if bucket_name:
         # means it's GCS bucket
+        gcs_client = storage.Client()
         bucket = gcs_client.bucket(bucket_name)
         blob = bucket.blob(prefix + path)
         chunks = pickle.loads(blob.download_as_bytes())
