@@ -168,7 +168,7 @@ def load_chunks(
     model: str,
     dimension: int,
     chunk_version: str = ALORITHM_VERSION,
-) -> TextChunksWithEmbedding:
+) -> TextChunksWithEmbedding | None:
     path = _blob_path(
         cik=cik,
         accession_number=accession_number,
@@ -182,13 +182,31 @@ def load_chunks(
         gcs_client = storage.Client()
         bucket = gcs_client.bucket(bucket_name)
         blob = bucket.blob(prefix + path)
-        chunks = pickle.loads(blob.download_as_bytes())
+        if blob.exists():
+            return pickle.loads(blob.download_as_bytes())
     else:
         # load from local file system
         output_path = Path(prefix) / path
-        with open(output_path, "rb") as f:
-            chunks = pickle.load(f)
-    return chunks
+        if output_path.exists():
+            with open(output_path, "rb") as f:
+                return pickle.load(f)
+    return None
+
+
+def load_trustee_comp_queries(model: str, dimension: int):
+    queries = load_chunks(
+        cik="0",
+        accession_number="0",
+        model=model,
+        dimension=dimension,
+    )
+    if queries:
+        return queries
+
+    queries = TextChunksWithEmbedding(TRUSTEE_COMP_QUERIES)
+    queries.get_embeddings()
+    save_chunks(queries)
+    return queries
 
 
 def chunk_filing(filing: SECFiling, method: str = "spacy"):
@@ -212,9 +230,7 @@ def chunk_filing(filing: SECFiling, method: str = "spacy"):
 def extract_trustee_comp(
     queries: TextChunksWithEmbedding,
     chunks: TextChunksWithEmbedding,
-    model=DEFAULT_LLM_MODEL,
-    dimension: int = 768,
-    chunk_version: str = ALORITHM_VERSION,
+    model: str,
 ) -> TrusteeComp:
     if not chunks.is_ready():
         raise ValueError("embedding data is not ready")

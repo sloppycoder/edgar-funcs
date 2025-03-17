@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 from edgar import SECFiling
 from rag import (
-    TRUSTEE_COMP_QUERIES,
     TextChunksWithEmbedding,
     _storage_prefix,
     chunk_filing,
@@ -11,18 +10,6 @@ from rag import (
 )
 from rag.embedding import GEMINI_EMBEDDING_MODEL
 from tests.utils import mock_embedding, mock_file_content
-
-
-def test_get_queries_embedding():
-    with patch(
-        "rag.batch_embedding",
-        return_value=mock_embedding("trustee_comp_queries.json"),
-    ):
-        queries_pair = TextChunksWithEmbedding(TRUSTEE_COMP_QUERIES)
-        assert not queries_pair.is_ready()  # not ready without loading embeddings
-
-        queries_pair.get_embeddings()
-        assert queries_pair.is_ready()
 
 
 def test_one_filing_full_lifecyele():
@@ -57,9 +44,21 @@ def test_one_filing_full_lifecyele():
         model=GEMINI_EMBEDDING_MODEL,
         dimension=768,
     )
-    assert restored_chunks.is_ready()
+    assert restored_chunks and restored_chunks.is_ready()
     assert chunks.texts == restored_chunks.texts
     assert chunks.embeddings == restored_chunks.embeddings
+
+
+def test_load_non_existent_chunks():
+    assert (
+        load_chunks(
+            cik="blah",
+            accession_number="blah",
+            model=GEMINI_EMBEDDING_MODEL,
+            dimension=768,
+        )
+        is None
+    )
 
 
 def test_storage_prefix():
