@@ -5,6 +5,7 @@ substitutions:
   _RES_TOPIC: "edgarai-response"
   _STORAGE_PREFIX: "gs://edgar_666/newfuncs"
   _LOG_LEVEL: "INFO"
+  _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -22,6 +23,8 @@ steps:
       - "--memory=2G"
       - "--timeout=540s"
       - "--max-instances=5"
+      - "--service-account"
+      - "${_SERVICE_ACCOUNT}"
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=edgar_processor"
       - "--source"
