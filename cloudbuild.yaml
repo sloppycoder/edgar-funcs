@@ -1,9 +1,9 @@
 substitutions:
   _REGION: "us-central1"
   _RUNTIME: "python312"
-  _REQ_TOPIC: "edgarai-funcs-req"
-  _RES_TOPIC: "edgarai-funcs-res"
-  _BUCKET_ID: "edgar_666"
+  _REQ_TOPIC: "edgarai-request"
+  _RES_TOPIC: "edgarai-response"
+  _STORAGE_PREFIX: "gs://edgar_666/newfuncs"
   _LOG_LEVEL: "INFO"
 
 options:
@@ -27,4 +27,4 @@ steps:
       - "--source"
       - "."
       - "--set-env-vars"
-      - "GCS_BUCKET_ID=${_BUCKET_ID},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+      - "STORAGE_PREFIX=${_STORAGE_PREFIX},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
