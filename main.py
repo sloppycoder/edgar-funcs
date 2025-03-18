@@ -107,7 +107,9 @@ def chunk_filing_and_save_embedding(
         new_chunks.get_embeddings()
         save_chunks(new_chunks)
 
-        logger.info(f"created new chunks with {data}")
+        logger.info(
+            f"created new chunks for {cik}/{accession_number}/{embedding_model}/{dimension}"  # noqa: E501
+        )
         return True, new_chunks
 
 
