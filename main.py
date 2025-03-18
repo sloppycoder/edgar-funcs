@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def req_processor(cloud_event: CloudEvent):
     data = cloud_event.data
     try:
-        logger.info(f"req_processor received {cloud_event}")
+        logger.info(f"req_processor received {data}")
         result = dispatch_event(data)
         publish_response({"params": data}, True, str(result))
     except Exception as e:
@@ -42,7 +42,7 @@ def req_processor(cloud_event: CloudEvent):
 
 
 def dispatch_event(data: dict[str, Any]) -> Any:
-    action = data["action"]
+    action = data.get("action")
 
     if action == "chunk_one_filing":
         is_reuse, chunks = chunk_filing_and_save_embedding(**data)
