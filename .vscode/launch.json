@@ -10,7 +10,10 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "args": [
+                "chunk/1002427/0001133228-24-004879"
+            ]
         },
         {
             "name": "pytest",

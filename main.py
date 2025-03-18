@@ -4,6 +4,7 @@ import sys
 import traceback
 
 import functions_framework
+from cloudevents.http import CloudEvent
 
 from edgar import SECFiling
 from func_helpers import (
@@ -30,11 +31,11 @@ REQ_EXTRACT_TRUSTEE = "edgar.funcs.extract_trustee_comp.req"
 
 
 @functions_framework.cloud_event
-def req_processor(cloud_event):
+def req_processor(cloud_event: CloudEvent):
     logger.info(f"req_processor received {cloud_event}")
 
-    attrs, data = cloud_event.attributes, cloud_event.data
-    event_type = attrs.get("type")
+    event_type = cloud_event["type"]
+    data = cloud_event.data
 
     if event_type == REQ_CHUNK:
         try:
@@ -79,11 +80,11 @@ def req_processor(cloud_event):
 
 
 @functions_framework.cloud_event
-def resp_processor(cloud_event):
+def resp_processor(cloud_event: CloudEvent):
     logger.info(f"resp_processor received {cloud_event}")
 
-    attrs, data = cloud_event.attributes, cloud_event.data
-    event_type = attrs.get("type")
+    event_type = cloud_event["type"]
+    data = cloud_event.data
 
     if event_type == RESP_CHUNK:
         try:
@@ -175,5 +176,8 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+
+    load_dotenv()
     if len(sys.argv) > 1:
         main(sys.argv)

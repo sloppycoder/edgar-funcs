@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any
 
+import google.auth  # Add this import
 from cloudevents.http import CloudEvent, to_json
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1
@@ -20,8 +21,13 @@ def setup_cloud_logging():
         logging.info("Using local logging.")
 
 
+def get_default_project_id():
+    _, project_id = google.auth.default()
+    return project_id
+
+
 def publish_message(event: CloudEvent, topic_name: str):
-    gcp_proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
