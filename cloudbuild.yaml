@@ -16,7 +16,7 @@ steps:
     args:
       - "functions"
       - "deploy"
-      - "req_processor"
+      - "edgar_req_processor"
       - "--gen2"
       - "--region=${_REGION}"
       - "--runtime=${_RUNTIME}"
@@ -37,7 +37,7 @@ steps:
     args:
       - "functions"
       - "deploy"
-      - "resp_processor"
+      - "edgar_resp_processor"
       - "--gen2"
       - "--region=${_REGION}"
       - "--runtime=${_RUNTIME}"
