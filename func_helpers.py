@@ -53,5 +53,7 @@ def publish_response(params: dict[str, Any], is_success: bool, msg: str):
 
 
 def publish_request(data: dict[str, Any]):
-    event = CloudEvent({}, data)
+    # cloudp pubsub will replace dummy values of its own anyways.
+    attributes = {"type": "dummy", "source": "dummy"}
+    event = CloudEvent(attributes, data)
     publish_message(event, os.getenv("REQUEST_TOPIC", ""))
