@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import traceback
@@ -32,7 +33,7 @@ def req_processor(cloud_event: CloudEvent):
     data = cloud_event.data
     try:
         logger.info(f"req_processor received {data}")
-        result = dispatch_event(data)
+        result = dispatch_event(json.loads(data))
         publish_response({"params": data}, True, str(result))
     except Exception as e:
         error_msg = str(e)
