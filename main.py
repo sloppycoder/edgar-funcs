@@ -150,11 +150,11 @@ def main(argv):
     }
 
     if parts[0] == "chunk":
-        event_type = REQ_CHUNK
-        publish_request(event_type, data)
+        data["action"] = "chunk_one_filing"
+        publish_request(data)
     elif parts[0] == "extract":
-        event_type = REQ_EXTRACT_TRUSTEE
-        publish_request(event_type, data)
+        data["action"] = "extract_one_filing"
+        publish_request(data)
     else:
         print(f"Unknown command {sys.argv[1]}")
 
