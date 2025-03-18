@@ -3,6 +3,7 @@ import os
 from functools import lru_cache
 
 import vertexai
+from google.cloud import storage
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -19,3 +20,8 @@ def init_vertaxai() -> None:
 @lru_cache(maxsize=1)
 def openai_client():
     return OpenAI()
+
+
+@lru_cache(maxsize=1)
+def gcs_client():
+    return storage.Client()

@@ -6,8 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, TypedDict
 
-from google.cloud import storage
-
 from edgar import SECFiling
 from rag.algo import (
     gather_chunk_distances,
@@ -20,6 +18,7 @@ from rag.extraction import ask_model, remove_md_json_wrapper
 
 from .chunking import ALORITHM_VERSION, chunk_text, trim_html_content
 from .embedding import GEMINI_EMBEDDING_MODEL, OPENAI_EMBEDDING_MODEL, batch_embedding
+from .helper import gcs_client
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +146,8 @@ def save_chunks(chunks: TextChunksWithEmbedding) -> None:
         path = _blob_path(chunks)
         bucket_name, prefix = _storage_prefix()
         if bucket_name:
-            # means it's GCS bucket
-            gcs_client = storage.Client()
-            bucket = gcs_client.bucket(bucket_name)
+            # use GCS bucket
+            bucket = gcs_client().bucket(bucket_name)
             blob = bucket.blob(prefix + path)
             blob.upload_from_string(pickle.dumps(chunks))
         else:
@@ -178,9 +176,8 @@ def load_chunks(
     )
     bucket_name, prefix = _storage_prefix()
     if bucket_name:
-        # means it's GCS bucket
-        gcs_client = storage.Client()
-        bucket = gcs_client.bucket(bucket_name)
+        # use GCS bucket
+        bucket = gcs_client().bucket(bucket_name)
         blob = bucket.blob(prefix + path)
         if blob.exists():
             return pickle.loads(blob.download_as_bytes())
