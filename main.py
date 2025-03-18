@@ -1,3 +1,5 @@
+import base64
+import json
 import logging
 import sys
 import traceback
@@ -29,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 @functions_framework.cloud_event
 def req_processor(cloud_event: CloudEvent):
-    data = cloud_event.data
-    logger.info(f"req_processor received {data}")
+    logger.info(f"req_processor received {cloud_event.data}")
+    data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
     try:
         if dispatch_event(data):
             publish_response({"params": data}, True, "success")
@@ -63,9 +65,8 @@ def dispatch_event(data: dict[str, Any]) -> Any:
 
 @functions_framework.cloud_event
 def resp_processor(cloud_event: CloudEvent):
-    data = cloud_event.data
-    logger.info(f"resp_processor received {data}")
-
+    logger.info(f"resp_processor received {cloud_event.data}")
+    data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
     action = data["action"]
 
     if action == "chunk_one_filing":
