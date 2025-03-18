@@ -1,7 +1,7 @@
-import json
 import logging
 import sys
 import traceback
+from typing import Any
 
 import functions_framework
 from cloudevents.http import CloudEvent
@@ -19,90 +19,61 @@ from rag import (
     chunk_filing,
     extract_trustee_comp,
     load_chunks,
+    save_chunks,
 )
 from rag.embedding import GEMINI_EMBEDDING_MODEL
 
 setup_cloud_logging()
 logger = logging.getLogger(__name__)
 
-REQ_CHUNK = "edgar.funcs.chunk_filing.req"
-RESP_CHUNK = "edgar.funcs.chunk_filing.resp"
-REQ_EXTRACT_TRUSTEE = "edgar.funcs.extract_trustee_comp.req"
-
 
 @functions_framework.cloud_event
 def req_processor(cloud_event: CloudEvent):
-    logger.info(f"req_processor received {cloud_event}")
-
-    event_type = cloud_event["type"]
     data = cloud_event.data
+    try:
+        logger.info(f"req_processor received {cloud_event}")
+        result = dispatch_event(data)
+        publish_response({"params": data}, True, str(result))
+    except Exception as e:
+        error_msg = str(e)
+        tb = traceback.format_exc()
+        logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
+        publish_response({"params": data}, True, error_msg)
 
-    if event_type == REQ_CHUNK:
-        try:
-            refresh = data.get("refresh", False)
 
-            existing_chunks = load_chunks(**data)
-            if existing_chunks and not refresh:
-                logger.info(f"re-use existing chunks for  {data}")
-                publish_response(event_type, data, True, "re-use")
-            else:
-                chunk_filing_and_save_embedding(**data)
-                logger.info(f"created new chunks with {data}")
-                publish_response(event_type, data, True, "success")
+def dispatch_event(data: dict[str, Any]) -> Any:
+    action = data["action"]
 
-        except Exception as e:
-            error_msg = str(e)
-            tb = traceback.format_exc()
-            logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
-            publish_response(event_type, data, True, "error_msg")
-
-    elif event_type == REQ_EXTRACT_TRUSTEE:
-        try:
-            result = extract_filing(**data)
-            if result:
-                logger.info(
-                    f"extraction with {data} found {result['n_trustee']} trustees"
-                )
-                publish_response(event_type, data, True, json.dumps(result))
-            else:
-                logger.info(f"extraction with {data} failed")
-                publish_response(event_type, data, False, "failed")
-
-        except Exception as e:
-            error_msg = str(e)
-            tb = traceback.format_exc()
-            logger.info(f"extraction with {data} failed with {error_msg}\n{tb}")
-            publish_response(event_type, data, True, "error_msg")
+    if action == "chunk_one_filing":
+        is_reuse, chunks = chunk_filing_and_save_embedding(**data)
+        if is_reuse:
+            logger.info(f"re-use existing chunks for {data}")
+        else:
+            logger.info(f"created new chunks for {data}")
+        return chunks
+    elif action == "extract_one_filing":
+        result = extract_filing(**data)
+        if result:
+            logger.info(f"extraction with {data} found {result['n_trustee']} trustees")
+        return result
     else:
-        # don't know how to process an event
-        # it's probably meant for some other processors
-        pass
+        logger.info(f"Unknown action {action}")
 
 
 @functions_framework.cloud_event
 def resp_processor(cloud_event: CloudEvent):
     logger.info(f"resp_processor received {cloud_event}")
 
-    event_type = cloud_event["type"]
     data = cloud_event.data
+    action = data["action"]
 
-    if event_type == RESP_CHUNK:
-        try:
-            params = data["params"]
-            if params.get("run_extract", False):
-                publish_request(REQ_EXTRACT_TRUSTEE, params)
-                logger.info(f"sent request for extraction with {params}")
-
-        except Exception as e:
-            error_msg = str(e)
-            tb = traceback.format_exc()
-            logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
-            publish_response(event_type, data, True, "error_msg")
-
-    else:
-        # don't know how to process an event
-        # it's probably meant for some other processors
-        pass
+    if action == "chunk_one_filing":
+        req_is_success = data["success"]
+        params = data["params"]
+        if req_is_success and params.get("run_extract", False):
+            params["action"] = "extract_one_filing"
+            publish_request(params)
+            logger.info(f"publish request for {params}")
 
 
 def chunk_filing_and_save_embedding(
@@ -110,21 +81,34 @@ def chunk_filing_and_save_embedding(
     accession_number: str,
     embedding_model: str,
     dimension: int,
+    refresh: bool = False,
     **_,  # ignore any other parameters
-):
-    filing = SECFiling(cik=cik, accession_number=accession_number)
-    text_chunks = chunk_filing(filing)
+) -> tuple[bool, TextChunksWithEmbedding]:
+    existing_chunks = load_chunks(
+        cik=cik,
+        accession_number=accession_number,
+        model=embedding_model,
+        dimension=dimension,
+    )
+    if existing_chunks and not refresh:
+        logger.info(f"re-use existing chunks for {cik}/{accession_number}")
+        return False, existing_chunks
+    else:
+        filing = SECFiling(cik=cik, accession_number=accession_number)
+        text_chunks = chunk_filing(filing)
+        metadata = {
+            "cik": filing.cik,
+            "accession_number": filing.accession_number,
+            "date_filed": filing.date_filed,
+            "model": embedding_model,
+            "dimension": dimension,
+        }
+        new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
+        new_chunks.get_embeddings()
+        save_chunks(new_chunks)
 
-    metadata = {
-        "cik": filing.cik,
-        "accession_number": filing.accession_number,
-        "date_filed": filing.date_filed,
-        "model": embedding_model,
-        "dimension": dimension,
-    }
-    filing_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-    filing_chunks.get_embeddings()
-    return filing_chunks
+        logger.info(f"created new chunks with {data}")
+        return True, new_chunks
 
 
 def extract_filing(

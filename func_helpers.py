@@ -42,28 +42,16 @@ def publish_message(event: CloudEvent, topic_name: str):
         logging.info(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
 
-def publish_response(
-    event_type: str, input_data: dict[str, Any], is_success: bool, msg: str
-):
-    attributes = {
-        "type": event_type.replace(".req", ".resp"),
-        "source": MESSAGE_SOURCE,
-    }
+def publish_response(params: dict[str, Any], is_success: bool, msg: str):
     data = {
-        "params": input_data,
+        "params": params,
         "success": is_success,
         "message": msg,
     }
-    event = CloudEvent(attributes, data)
+    event = CloudEvent({}, data)
     publish_message(event, os.getenv("RESPONSE_TOPIC", ""))
 
 
-def publish_request(event_type: str, input_data: dict[str, Any]):
-    event = CloudEvent(
-        {
-            "type": event_type,
-            "source": MESSAGE_SOURCE,
-        },
-        input_data,
-    )
+def publish_request(data: dict[str, Any]):
+    event = CloudEvent({}, data)
     publish_message(event, os.getenv("REQUEST_TOPIC", ""))
