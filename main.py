@@ -93,8 +93,7 @@ def chunk_filing_and_save_embedding(
         dimension=dimension,
     )
     if existing_chunks and not refresh:
-        logger.info(f"re-use existing chunks for {cik}/{accession_number}")
-        return False, existing_chunks
+        return True, existing_chunks
     else:
         filing = SECFiling(cik=cik, accession_number=accession_number)
         text_chunks = chunk_filing(filing)
@@ -108,11 +107,7 @@ def chunk_filing_and_save_embedding(
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings()
         save_chunks(new_chunks)
-
-        logger.info(
-            f"created new chunks for {cik}/{accession_number}/{embedding_model}/{dimension}"  # noqa: E501
-        )
-        return True, new_chunks
+        return False, new_chunks
 
 
 def extract_filing(
