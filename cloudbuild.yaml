@@ -4,7 +4,7 @@ substitutions:
   _REQ_TOPIC: "edgarai-request"
   _RES_TOPIC: "edgarai-response"
   _STORAGE_PREFIX: "gs://edgar_666/newfuncs"
-  _LOG_LEVEL: "INFO"
+  _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
 
 options:

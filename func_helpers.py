@@ -20,6 +20,10 @@ def setup_cloud_logging():
         logging.basicConfig(level=logging.INFO)
         logging.info("Using local logging.")
 
+    app_log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO"), logging.INFO)
+    for app_module in ["edgar", "rag", "main"]:
+        logging.getLogger(app_module).setLevel(app_log_level)
+
 
 def get_default_project_id():
     _, project_id = google.auth.default()
