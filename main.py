@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 @functions_framework.cloud_event
 def req_processor(cloud_event: CloudEvent):
     data = cloud_event.data
+    logger.info(f"req_processor received {data}")
     try:
-        logger.info(f"req_processor received {data}")
-        result = dispatch_event(data)
-        publish_response({"params": data}, True, str(result))
+        if dispatch_event(data):
+            publish_response({"params": data}, True, "success")
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
@@ -58,13 +58,14 @@ def dispatch_event(data: dict[str, Any]) -> Any:
         return result
     else:
         logger.info(f"Unknown action {action}")
+        return None
 
 
 @functions_framework.cloud_event
 def resp_processor(cloud_event: CloudEvent):
-    logger.info(f"resp_processor received {cloud_event}")
-
     data = cloud_event.data
+    logger.info(f"resp_processor received {data}")
+
     action = data["action"]
 
     if action == "chunk_one_filing":
