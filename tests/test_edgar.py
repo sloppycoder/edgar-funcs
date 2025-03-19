@@ -35,3 +35,22 @@ def test_parse_485bpos_filing():
         assert len(filing.documents) == 26
         assert html_path.endswith("msif-html7854_485bpos.htm")
         assert html_content and "N-1A" in html_content
+
+
+def test_parse_old_485bpos_filing():
+    # with patch("edgar.edgar_file", side_effect=mock_file_content):
+    # this is an old filing where index-headers.html does not exist
+    # so we must parse index.html to get the documents list
+    with patch("edgar.edgar_file", side_effect=mock_file_content):
+        filing = SECFiling(
+            cik="39473",
+            accession_number="0000039473-03-000002",
+            prefer_index_headers=False,
+        )
+        html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
+
+        assert filing.cik == "39473" and filing.date_filed == "2003-02-28"
+        assert filing.accession_number == "0000039473-03-000002"
+        assert len(filing.documents) == 4
+        assert html_path.endswith("fi485.txt")
+        assert html_content and "N-1A" in html_content

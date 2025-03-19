@@ -52,7 +52,11 @@ class InvalidFilingExceptin(Exception):
 
 class SECFiling:
     def __init__(
-        self, cik: str = "", accession_number: str = "", idx_filename: str = ""
+        self,
+        cik: str = "",
+        accession_number: str = "",
+        idx_filename: str = "",
+        prefer_index_headers: bool = True,  # debug only, always set to True in production
     ) -> None:
         # sometimes a same filename is used by several CIKs
         # filename as in master.idx
@@ -75,8 +79,17 @@ class SECFiling:
         self.index_headers_path = self.index_html_path.replace(
             "-index.html", "-index-headers.html"
         )
+        self.date_filed = ""
+        self.documents = []
 
-        (self._sec_header, self.date_filed, self.documents) = self._read_index_headers()
+        if prefer_index_headers:
+            (self.date_filed, self.documents) = self._read_index_headers()
+
+        if not self.documents:
+            # for older filings index-headers.htm l does not exist
+            # so parsing the index.html instead
+            (self.date_filed, self.documents) = self._read_index()
+
         logger.debug(f"initialized SECFiling({self.cik},{self.idx_filename})")
 
     def get_doc_path(self, doc_type: str) -> list[str]:
@@ -117,12 +130,15 @@ class SECFiling:
                     break
         return result
 
-    def _read_index_headers(self) -> tuple[str, str, list[dict[str, Any]]]:
-        """read the index-headers.html file and extract the sec_header and documents"""
+    def _read_index_headers(self) -> tuple[str, list[dict[str, Any]]]:
+        """read the index-headers.html file and extract document list from sec_header"""
 
         content = edgar_file(self.index_headers_path)
         if not content:
-            raise InvalidFilingExceptin(f"Unable to read {self.index_headers_path}")
+            logger.debug(
+                f"Unable to download {self.index_headers_path}, perhaps the filing is too old?"  # noqa E501
+            )
+            return "", []
 
         soup = BeautifulSoup(content, "html.parser")
         # each index-headers.html file contains a single <pre> tag
@@ -130,7 +146,7 @@ class SECFiling:
         pre = soup.find("pre")
         if pre is None:
             logger.debug(f"No <pre> tag found in {self.index_headers_path}")
-            return "", "", []
+            return "", []
 
         pre_soup = BeautifulSoup(pre.get_text(), "html.parser")
 
@@ -156,11 +172,49 @@ class SECFiling:
                     }
                     documents.append(doc_info)
 
-            return sec_header_text, date_filed, documents
+            return date_filed, documents
 
         logger.info(f"No sec-header found in {self.index_headers_path}")
 
-        return "", "", []
+        return "", []
+
+    def _read_index(self) -> tuple[str, list[dict[str, Any]]]:
+        """read the index.html file and extract the documents"""
+
+        content = edgar_file(self.index_html_path)
+        if not content:
+            logger.debug(
+                f"Unable to download {self.index_headers_path}, perhaps the filing is too old?"  # noqa E501
+            )
+            return "", []
+
+        soup = BeautifulSoup(content, "html.parser")
+
+        filing_date = ""
+        info_heads = soup.find_all("div", class_="infoHead")
+        for head in info_heads:
+            if head.text.strip() == "Filing Date":
+                filing_date = head.find_next_sibling("div", class_="info").text.strip()  # type: ignore
+                break
+
+        table = soup.find("table", class_="tableFile")
+
+        documents = []
+        for row in table.find_all("tr")[1:]:  # type: ignore Skip the header row
+            cols = row.find_all("td")  # type: ignore
+            if len(cols) < 5:
+                continue
+
+            sequence = cols[0].get_text(strip=True) or None
+            filename = cols[2].find("a").text if cols[2].find("a") else None  # type: ignore
+            doc_type = cols[3].get_text(strip=True) or None
+
+            if filename:
+                documents.append(
+                    {"sequence": sequence, "filename": filename, "type": doc_type}
+                )
+
+        return filing_date, documents
 
     def __str__(self):
         return f"SECFiling({self.cik},{self.accession_number},{self.date_filed},docs={len(self.documents)})"  # noqa E501
@@ -194,8 +248,8 @@ def edgar_file(
         return response.text
     elif response.status_code == 429:
         # TODO: add retrying logic and etc to make it more robust
-        logger.debug(f"Failed to download from {idx_filename}: {response.status_code}")
-        raise RateLimitedException(f"Rate limited: {response.status_code}")
+        logger.debug(f"Received 429 trying to download {idx_filename}")
+        raise RateLimitedException(f"Rate limited: {idx_filename}")
     else:
         logger.info(f"Failed to download from {idx_filename}: {response.status_code}")
 
