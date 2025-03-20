@@ -1,0 +1,7 @@
+```json
+{
+  "compensation_info_present": false,
+  "trustees": [],
+  "notes": "The provided text snippet contains dividend and distribution information for different classes of shares (A, B, C, F, 529-A, 529-B, 529-C, 529-E, 529-F, R-1, R-2, R-3, R-4, R-5), but it does not contain any compensation information for Trustees or any other individuals.  The numbers represent dividends and distributions, not compensation."
+}
+```
