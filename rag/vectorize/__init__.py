@@ -165,7 +165,7 @@ def chunk_filing_and_save_embedding(
     cik: str,
     accession_number: str,
     embedding_model: str,
-    dimension: int,
+    embedding_dimension: int,
     refresh: bool = False,
     **_,  # ignore any other parameters
 ) -> tuple[bool, TextChunksWithEmbedding]:
@@ -174,7 +174,7 @@ def chunk_filing_and_save_embedding(
             cik=cik,
             accession_number=accession_number,
             model=embedding_model,
-            dimension=dimension,
+            dimension=embedding_dimension,
         )
         return True, existing_chunks
     except ValueError:
