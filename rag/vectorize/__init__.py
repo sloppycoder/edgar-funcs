@@ -169,15 +169,15 @@ def chunk_filing_and_save_embedding(
     refresh: bool = False,
     **_,  # ignore any other parameters
 ) -> tuple[bool, TextChunksWithEmbedding]:
-    existing_chunks = TextChunksWithEmbedding.load(
-        cik=cik,
-        accession_number=accession_number,
-        model=embedding_model,
-        dimension=dimension,
-    )
-    if existing_chunks and not refresh:
+    try:
+        existing_chunks = TextChunksWithEmbedding.load(
+            cik=cik,
+            accession_number=accession_number,
+            model=embedding_model,
+            dimension=dimension,
+        )
         return True, existing_chunks
-    else:
+    except ValueError:
         filing = SECFiling(cik=cik, accession_number=accession_number)
         text_chunks = chunk_filing(filing)
         metadata = {
