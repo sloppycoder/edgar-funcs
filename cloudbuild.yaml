@@ -6,7 +6,7 @@ substitutions:
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
-  _IMAGE: "gcr.io/${PROJECT_ID}/edgar-funcs:${SHORT_SHA}"
+  _IMAGE: "${_REGION}-docker.pkg.dev/${PROJECT_ID}/edgar-funcs/edgar-funcs:${SHORT_SHA}"
 
 options:
   logging: CLOUD_LOGGING_ONLY
