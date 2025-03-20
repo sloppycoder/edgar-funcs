@@ -6,11 +6,40 @@ substitutions:
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
+  _IMAGE: "gcr.io/${PROJECT_ID}/edgar-funcs:${SHORT_SHA}"
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  volumes:
+    - name: 'pip_cache'
+      path: '/workspace/.pip_cache'
 
 steps:
+  # Run unit tests - disabled for performance
+  # - name: "python:3.12"
+  #   id: "run-tests"
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |
+  #       # Use pip cache for faster installation
+  #       pip config set global.cache-dir /workspace/.pip_cache
+  #       pip install --no-cache-dir -r requirements.txt
+  #       pip install --no-cache-dir pytest pytest-dotenv pytest-mock pytest-cov pytest-asyncio
+  #       pytest -v tests/ --junitxml=/workspace/test-results.xml
+  #   volumes:
+  #     - name: "pip_cache"
+  #       path: "/workspace/.pip_cache"
+
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "${_IMAGE}", "."]
+
+  # Push the container image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "${_IMAGE}"]
+
+  # Deploy req_processor
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
@@ -19,7 +48,6 @@ steps:
       - "edgar_req_processor"
       - "--gen2"
       - "--region=${_REGION}"
-      - "--runtime=${_RUNTIME}"
       - "--memory=2G"
       - "--timeout=540s"
       - "--max-instances=5"
@@ -27,11 +55,11 @@ steps:
       - "${_SERVICE_ACCOUNT}"
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=req_processor"
-      - "--source"
-      - "."
+      - "--docker-repository=${_IMAGE}"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
 
+  # Deploy resp_processor
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
@@ -40,7 +68,6 @@ steps:
       - "edgar_resp_processor"
       - "--gen2"
       - "--region=${_REGION}"
-      - "--runtime=${_RUNTIME}"
       - "--memory=512M"
       - "--timeout=60s"
       - "--max-instances=10"
@@ -48,7 +75,9 @@ steps:
       - "${_SERVICE_ACCOUNT}"
       - "--trigger-topic=${_RES_TOPIC}"
       - "--entry-point=resp_processor"
-      - "--source"
-      - "."
+      - "--docker-repository=${_IMAGE}"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},REQUEST_TOPIC=${_REQ_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+
+images:
+  - ${_IMAGE}
