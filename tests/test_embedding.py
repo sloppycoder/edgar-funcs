@@ -26,15 +26,15 @@ def test_one_filing_chunk_save_load():
         "rag.vectorize.batch_embedding",
         return_value=mock_embedding("1002427/0001133228-24-004879.json"),
     ):
-        metadata = {
-            "cik": filing.cik,
-            "accession_number": filing.accession_number,
-            "date_filed": filing.date_filed,
-            "model": GEMINI_EMBEDDING_MODEL,
-            "dimension": 768,
-        }
-        chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        chunks.get_embeddings()
+        chunks = TextChunksWithEmbedding(
+            text_chunks,
+            metadata={
+                "cik": filing.cik,
+                "accession_number": filing.accession_number,
+                "date_filed": filing.date_filed,
+            },
+        )
+        chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
         assert chunks.is_ready() and chunks.save() is None
 
     restored_chunks = TextChunksWithEmbedding.load(

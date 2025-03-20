@@ -17,7 +17,7 @@ def test_extract_filing():
             cik="1002427",
             accession_number="0001133228-24-004879",
             embedding_model=GEMINI_EMBEDDING_MODEL,
-            dimension=768,
+            embedding_dimension=768,
             model=DEFAULT_LLM_MODEL,
         )
         assert (

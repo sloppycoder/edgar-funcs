@@ -93,7 +93,7 @@ def extract_filing(
     cik: str,
     accession_number: str,
     embedding_model: str,
-    dimension: int,
+    embedding_dimension: int,
     model: str,
     **_,  # ignore any other parameters
 ) -> TrusteeComp | None:
@@ -101,9 +101,11 @@ def extract_filing(
         cik=cik,
         accession_number=accession_number,
         model=embedding_model,
-        dimension=dimension,
+        dimension=embedding_dimension,
     )
-    queries = _load_trustee_comp_queries(model=embedding_model, dimension=dimension)
+    queries = _load_trustee_comp_queries(
+        embedding_model=embedding_model, embedding_dimension=embedding_dimension
+    )
 
     if chunks is None or queries is None:
         return None
@@ -112,27 +114,27 @@ def extract_filing(
     return result
 
 
-def _load_trustee_comp_queries(model: str, dimension: int):
+def _load_trustee_comp_queries(embedding_model: str, embedding_dimension: int):
     cik, accession_number = "0", "trustee_queries"
     try:
         return TextChunksWithEmbedding.load(
             cik=cik,
             accession_number=accession_number,
-            model=model,
-            dimension=dimension,
+            model=embedding_model,
+            dimension=embedding_dimension,
         )
     except ValueError:
         # saved queries vectors not found
         # create new one
         logger.debug("Creating new trustee compensation queries")
-        metadata = {
-            "cik": cik,
-            "accession_number": accession_number,
-            "model": model,
-            "dimension": dimension,
-        }
-        queries = TextChunksWithEmbedding(TRUSTEE_COMP_QUERIES, metadata=metadata)
-        queries.get_embeddings()
+        queries = TextChunksWithEmbedding(
+            texts=TRUSTEE_COMP_QUERIES,
+            metadata={
+                "cik": cik,
+                "accession_number": accession_number,
+            },
+        )
+        queries.get_embeddings(model=embedding_model, dimension=embedding_dimension)
         queries.save()
         return queries
 
@@ -146,9 +148,9 @@ def _extract_trustee_comp(
         raise ValueError("embedding data is not ready")
 
     result: TrusteeComp = {
-        "cik": chunks.medata.get("cik", ""),
-        "accession_number": chunks.medata.get("accession_number", ""),
-        "date_filed": chunks.medata.get("date_filed", "1971-01-01"),
+        "cik": chunks.metadata.get("cik", ""),
+        "accession_number": chunks.metadata.get("accession_number", ""),
+        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
         "selected_chunks": [],
         "selected_text": "",
         "n_trustee": 0,
@@ -188,7 +190,9 @@ def _extract_trustee_comp(
 
 
 def _find_relevant_text(
-    queries: TextChunksWithEmbedding, chunks: TextChunksWithEmbedding, method: str
+    queries: TextChunksWithEmbedding,
+    chunks: TextChunksWithEmbedding,
+    method: str,
 ):
     relevance_result = relevant_chunks_with_distances(
         queries.embeddings, chunks.embeddings, limit=20

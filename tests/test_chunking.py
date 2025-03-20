@@ -5,7 +5,9 @@ from rag.vectorize.chunking import _is_line_empty, chunk_text, trim_html_content
 from tests.utils import mock_file_content
 
 
-def test_chunk_filing():
+def test_chunk_html_filing():
+    # newer filing usually uses an -index-headers.html for filing content
+    # and has html for the filing itself
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
         filing_path, filing_content = filing.get_doc_content("485BPOS", max_items=1)[0]
@@ -16,6 +18,26 @@ def test_chunk_filing():
         chunks = chunk_text(trimmed_html, method="spacy")
 
         assert len(chunks) == 262
+        # no chunk is empty or too short
+        assert all(chunk and len(chunk) > 10 for chunk in chunks)
+
+
+def test_chunk_txt_filing():
+    # older filing does not have an -index-headers.html for filing content
+    # and the filing content can be in a txt file not html
+    with patch("edgar.edgar_file", side_effect=mock_file_content):
+        filing = SECFiling(
+            cik="39473",
+            accession_number="0000039473-03-000002",
+            prefer_index_headers=False,
+        )
+        filing_path, filing_content = filing.get_doc_content("485BPOS", max_items=1)[0]
+
+        assert filing_path.endswith(".txt")
+
+        chunks = chunk_text(filing_content, method="spacy")
+
+        assert len(chunks) == 177
         # no chunk is empty or too short
         assert all(chunk and len(chunk) > 10 for chunk in chunks)
 

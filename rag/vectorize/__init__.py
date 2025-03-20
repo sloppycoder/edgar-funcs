@@ -3,7 +3,7 @@ import os
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 from edgar import SECFiling
 
@@ -14,33 +14,57 @@ from .embedding import GEMINI_EMBEDDING_MODEL, OPENAI_EMBEDDING_MODEL, batch_emb
 logger = logging.getLogger(__name__)
 
 
-class TextChunksWithEmbedding:
+class TextEmbeddingMetadata(TypedDict):
+    cik: str
+    accession_number: str
+    date_filed: str
     model: str
-    embbedding_dimensions: int = 0
-    texts: list[str] = []
-    embeddings: list[list[float]] = []
-    metadata: dict[str, str | int] = {}
+    dimension: int
+    chunk_version: str
 
-    def __init__(self, texts: list[str], metadata: dict[str, Any] = {}):
+
+class TextChunksWithEmbedding:
+    texts: list[str]
+    embeddings: list[list[float]]
+    metadata: TextEmbeddingMetadata
+
+    def __init__(
+        self,
+        texts: list[str],
+        embeddings: list[list[float]] = [],
+        metadata={
+            "accession_number": "",
+            "date_filed": "",
+            "model": "",
+            "dimension": 0,
+            "chunk_version": ALORITHM_VERSION,
+        },
+    ):
         if not texts:
             raise ValueError("texts cannot be empty")
 
         self.texts = texts
-        self.medata = metadata
+        self.embeddings = embeddings
+        self.metadata = metadata
 
     def is_ready(self) -> bool:
         return (
-            len(self.texts) > 0
+            self.metadata["model"] != ""
+            and self.metadata["dimension"] > 0
+            and len(self.texts) > 0
             and len(self.embeddings) > 0
             and len(self.texts) == len(self.embeddings)
-            and len(self.embeddings[0]) == self.embbedding_dimensions
+            and len(self.embeddings[0]) == self.metadata["dimension"]
         )
 
     def get_embeddings(
         self,
-        model: str = GEMINI_EMBEDDING_MODEL,
-        dimension: int = 768,
+        model: str,
+        dimension: int,
     ):
+        if not self.texts:
+            raise ValueError("texts cannot be empty")
+
         if model == OPENAI_EMBEDDING_MODEL:
             dimension = 1536
 
@@ -50,27 +74,28 @@ class TextChunksWithEmbedding:
         logger.debug(
             f"batch_embedding of {len(self.texts)} chunks of text with {model} took {elapsed_t.total_seconds()} seconds"  # noqa E501
         )
-        self.embbedding_dimensions = dimension
-        self.model = model
+        self.metadata["model"] = model
+        self.metadata["dimension"] = dimension
 
     def get_text_chunks(self, chunks: list[int]) -> str:
         return "\n\n".join([self.texts[i] for i in chunks])
 
     def save(self) -> None:
         if self.is_ready():
-            path = _blob_path(self)
+            path = _blob_path(**self.metadata)
             bucket_name, prefix = _storage_prefix()
+            obj = [self.texts, self.embeddings, self.metadata]
             if bucket_name:
                 # use GCS bucket
                 bucket = gcs_client().bucket(bucket_name)
                 blob = bucket.blob(prefix + path)
-                blob.upload_from_string(pickle.dumps(self))
+                blob.upload_from_string(pickle.dumps(obj))
             else:
                 # save to local file system
                 output_path = Path(prefix) / path
                 os.makedirs(output_path.parent, exist_ok=True)
                 with open(output_path, "wb") as f:
-                    pickle.dump(self, f)
+                    pickle.dump(obj, f)
         else:
             raise ValueError("cannot save without embedding data")
 
@@ -91,33 +116,44 @@ class TextChunksWithEmbedding:
             chunk_version=chunk_version,
         )
         bucket_name, prefix = _storage_prefix()
+        obj = None
         if bucket_name:
             # use GCS bucket
             bucket = gcs_client().bucket(bucket_name)
             blob = bucket.blob(prefix + path)
             if blob.exists():
-                return pickle.loads(blob.download_as_bytes())
+                obj = pickle.loads(blob.download_as_bytes())
         else:
             # load from local file system
             output_path = Path(prefix) / path
             if output_path.exists():
                 with open(output_path, "rb") as f:
-                    return pickle.load(f)
+                    obj = pickle.load(f)
+
+        if obj and len(obj) == 3:
+            return TextChunksWithEmbedding(
+                texts=obj[0], embeddings=obj[1], metadata=obj[2]
+            )
 
         raise ValueError(f"Cannot load chunks from {path}")
 
 
-def chunk_filing(filing: SECFiling, method: str = "spacy"):
+def chunk_filing(filing: SECFiling, method: str = "spacy") -> list[str]:
     if method != "spacy":
         raise ValueError(f"Unsupported chunking method {method}")
 
     path, content = filing.get_doc_content("485BPOS", max_items=1)[0]
-    if not path.endswith((".html", ".htm")):
+    text_content = None
+
+    if path.endswith((".html", ".htm")):
+        text_content = trim_html_content(content)
+    elif path.endswith(".txt"):
+        text_content = content
+    else:
         raise ValueError(f"Unsupported document format {path}")
 
     start_t = datetime.now()
-    trimmed_html = trim_html_content(content)
-    chunks = chunk_text(trimmed_html, method=method)
+    chunks = chunk_text(text_content, method=method)
     elapsed_t = datetime.now() - start_t
     logger.debug(
         f"chunking {filing.cik}/{filing.accession_number} into {len(chunks)} chunks took {elapsed_t.total_seconds()} seconds"  # noqa E501
@@ -152,33 +188,20 @@ def chunk_filing_and_save_embedding(
             "dimension": dimension,
         }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        new_chunks.get_embeddings()
+        new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
         new_chunks.save()
         return False, new_chunks
 
 
 def _blob_path(
-    chunks: TextChunksWithEmbedding | None = None,
-    cik: str = "",
-    accession_number: str = "",
-    chunk_version: str = "",
-    model: str = "",
-    dimension: int = 768,
+    cik: str,
+    accession_number: str,
+    model: str,
+    dimension: int,
+    chunk_version: str = ALORITHM_VERSION,
+    **_,  # ignore any other parameters
 ):
     # return the path for storing a TextChunkWithEmbedding object
-    if chunks and chunks.is_ready():
-        # chunks object override rest of the parameters
-        meta = chunks.medata
-        cik = meta.get("cik", "0")
-        accession_number = meta.get("accession_number", "0")
-        chunk_version = meta.get("chunk_version", ALORITHM_VERSION)
-        model = meta.get("model") or GEMINI_EMBEDDING_MODEL
-        dimension = meta.get("dimension", 768)
-    elif cik and accession_number and model and dimension:
-        chunk_version = chunk_version or ALORITHM_VERSION
-    else:
-        raise ValueError("Must specifcy cik, accession_number, model, dimension")
-
     return f"{chunk_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
 
 
