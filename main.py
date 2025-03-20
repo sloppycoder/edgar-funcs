@@ -14,16 +14,10 @@ from func_helpers import (
     publish_response,
     setup_cloud_logging,
 )
-from rag import (
-    DEFAULT_LLM_MODEL,
-    TextChunksWithEmbedding,
-    TrusteeComp,
-    chunk_filing,
-    extract_trustee_comp,
-    load_chunks,
-    save_chunks,
-)
-from rag.embedding import GEMINI_EMBEDDING_MODEL
+from rag.extract.llm import DEFAULT_LLM_MODEL
+from rag.extract.trustee import extract_filing
+from rag.vectorize import TextChunksWithEmbedding, chunk_filing, load_chunks, save_chunks
+from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 
 setup_cloud_logging()
 logger = logging.getLogger(__name__)
@@ -108,34 +102,6 @@ def chunk_filing_and_save_embedding(
         new_chunks.get_embeddings()
         save_chunks(new_chunks)
         return False, new_chunks
-
-
-def extract_filing(
-    cik: str,
-    accession_number: str,
-    embedding_model: str,
-    model: str,
-    dimension: int,
-    **_,  # ignore any other parameters
-) -> TrusteeComp | None:
-    chunks = load_chunks(
-        cik=cik,
-        accession_number=accession_number,
-        model=embedding_model,
-        dimension=dimension,
-    )
-    queries = load_chunks(
-        cik=cik,
-        accession_number=accession_number,
-        model=embedding_model,
-        dimension=dimension,
-    )
-
-    if chunks is None or queries is None:
-        return None
-
-    result = extract_trustee_comp(queries, chunks, model)
-    return result
 
 
 def main(argv):

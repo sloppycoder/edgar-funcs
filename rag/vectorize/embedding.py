@@ -6,7 +6,7 @@ from google.api_core.exceptions import GoogleAPICallError, ServerError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
-from .helper import init_vertaxai, openai_client
+from ..helper import init_vertaxai, openai_client
 
 # models used for embeddings
 OPENAI_EMBEDDING_MODEL = "text-embedding-ada-002"

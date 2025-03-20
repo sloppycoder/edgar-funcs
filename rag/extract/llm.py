@@ -6,9 +6,11 @@ from google.api_core.exceptions import ResourceExhausted
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 from vertexai.generative_models import GenerativeModel
 
-from .helper import init_vertaxai, openai_client
+from ..helper import init_vertaxai, openai_client
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_LLM_MODEL = "gemini-1.5-flash-002"
 
 
 def ask_model(model: str, prompt: str) -> Optional[str]:

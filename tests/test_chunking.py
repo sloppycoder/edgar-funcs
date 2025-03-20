@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from edgar import SECFiling
-from rag.chunking import _is_line_empty, chunk_text, trim_html_content
+from rag.vectorize.chunking import _is_line_empty, chunk_text, trim_html_content
 from tests.utils import mock_file_content
 
 
