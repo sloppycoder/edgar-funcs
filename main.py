@@ -8,7 +8,6 @@ from typing import Any
 import functions_framework
 from cloudevents.http import CloudEvent
 
-from edgar import SECFiling
 from func_helpers import (
     publish_request,
     publish_response,
@@ -16,7 +15,7 @@ from func_helpers import (
 )
 from rag.extract.llm import DEFAULT_LLM_MODEL
 from rag.extract.trustee import extract_filing
-from rag.vectorize import TextChunksWithEmbedding, chunk_filing, load_chunks, save_chunks
+from rag.vectorize import chunk_filing_and_save_embedding
 from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 
 setup_cloud_logging()
@@ -70,38 +69,6 @@ def resp_processor(cloud_event: CloudEvent):
             params["action"] = "extract_one_filing"
             publish_request(params)
             logger.info(f"publish request for {params}")
-
-
-def chunk_filing_and_save_embedding(
-    cik: str,
-    accession_number: str,
-    embedding_model: str,
-    dimension: int,
-    refresh: bool = False,
-    **_,  # ignore any other parameters
-) -> tuple[bool, TextChunksWithEmbedding]:
-    existing_chunks = load_chunks(
-        cik=cik,
-        accession_number=accession_number,
-        model=embedding_model,
-        dimension=dimension,
-    )
-    if existing_chunks and not refresh:
-        return True, existing_chunks
-    else:
-        filing = SECFiling(cik=cik, accession_number=accession_number)
-        text_chunks = chunk_filing(filing)
-        metadata = {
-            "cik": filing.cik,
-            "accession_number": filing.accession_number,
-            "date_filed": filing.date_filed,
-            "model": embedding_model,
-            "dimension": dimension,
-        }
-        new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        new_chunks.get_embeddings()
-        save_chunks(new_chunks)
-        return False, new_chunks
 
 
 def main(argv):
