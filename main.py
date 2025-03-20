@@ -33,7 +33,7 @@ def req_processor(cloud_event: CloudEvent):
         error_msg = str(e)
         tb = traceback.format_exc()
         logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
-        publish_response({"params": data}, True, error_msg)
+        publish_response(data, False, error_msg)
 
 
 def dispatch_event(data: dict[str, Any]) -> Any:
@@ -77,8 +77,8 @@ def main(argv):
         "cik": parts[1],
         "accession_number": parts[2],
         "embedding_model": GEMINI_EMBEDDING_MODEL,
+        "embedding_dimension": 768,
         "model": DEFAULT_LLM_MODEL,
-        "dimension": 768,
         "run_extract": True,
     }
 
