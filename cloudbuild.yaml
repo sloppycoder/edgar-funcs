@@ -6,13 +6,9 @@ substitutions:
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
-  _IMAGE: "${_REGION}-docker.pkg.dev/${PROJECT_ID}/edgar-funcs/edgar-funcs:${SHORT_SHA}"
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  volumes:
-    - name: 'pip_cache'
-      path: '/workspace/.pip_cache'
 
 steps:
   # Run unit tests - disabled for performance
@@ -31,13 +27,17 @@ steps:
   #     - name: "pip_cache"
   #       path: "/workspace/.pip_cache"
 
-  # Build the container image
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE}", "."]
-
-  # Push the container image to Container Registry
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_IMAGE}"]
+  # Prepare source for both functions
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "prepare-source"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Create a source directory with all the files
+        mkdir -p /workspace/function-source
+        cp -R * /workspace/function-source/ 2>/dev/null || true
+        cp -R .* /workspace/function-source/ 2>/dev/null || true
 
   # Deploy req_processor
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -48,6 +48,7 @@ steps:
       - "edgar_req_processor"
       - "--gen2"
       - "--region=${_REGION}"
+      - "--runtime=${_RUNTIME}"
       - "--memory=2G"
       - "--timeout=540s"
       - "--max-instances=5"
@@ -55,7 +56,7 @@ steps:
       - "${_SERVICE_ACCOUNT}"
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=req_processor"
-      - "--docker-repository=${_IMAGE}"
+      - "--source=/workspace/function-source"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
 
@@ -68,6 +69,7 @@ steps:
       - "edgar_resp_processor"
       - "--gen2"
       - "--region=${_REGION}"
+      - "--runtime=${_RUNTIME}"
       - "--memory=512M"
       - "--timeout=60s"
       - "--max-instances=10"
@@ -75,9 +77,6 @@ steps:
       - "${_SERVICE_ACCOUNT}"
       - "--trigger-topic=${_RES_TOPIC}"
       - "--entry-point=resp_processor"
-      - "--docker-repository=${_IMAGE}"
+      - "--source=/workspace/function-source"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},REQUEST_TOPIC=${_REQ_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
-
-images:
-  - ${_IMAGE}
