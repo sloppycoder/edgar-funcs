@@ -28,7 +28,7 @@ def req_processor(cloud_event: CloudEvent):
     data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
     try:
         if dispatch_event(data):
-            publish_response({"params": data}, True, "success")
+            publish_response(data, True, "success")
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
