@@ -60,11 +60,11 @@ def dispatch_event(data: dict[str, Any]) -> Any:
 def resp_processor(cloud_event: CloudEvent):
     logger.info(f"resp_processor received {cloud_event.data}")
     data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
-    action = data["action"]
+    params = data["params"]
+    action = params["action"]
 
     if action == "chunk_one_filing":
         req_is_success = data["success"]
-        params = data["params"]
         if req_is_success and params.get("run_extract", False):
             params["action"] = "extract_one_filing"
             publish_request(params)
@@ -79,6 +79,7 @@ def main(argv):
         "embedding_model": GEMINI_EMBEDDING_MODEL,
         "model": DEFAULT_LLM_MODEL,
         "dimension": 768,
+        "run_extract": True,
     }
 
     if parts[0] == "chunk":
