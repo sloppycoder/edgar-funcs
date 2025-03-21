@@ -53,6 +53,7 @@ def req_processor(cloud_event: CloudEvent) -> None:
                 else:
                     message = "result discarded"
 
+                logger.info(message)
                 publish_response(data, True, message)
 
         else:
