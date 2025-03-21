@@ -1,14 +1,15 @@
 import base64
 import json
 import logging
+import os
 import sys
 import traceback
-from typing import Any
 
 import functions_framework
 from cloudevents.http import CloudEvent
 
 from func_helpers import (
+    publish_message,
     publish_request,
     publish_response,
     setup_cloud_logging,
@@ -23,37 +24,46 @@ logger = logging.getLogger(__name__)
 
 
 @functions_framework.cloud_event
-def req_processor(cloud_event: CloudEvent):
+def req_processor(cloud_event: CloudEvent) -> None:
     logger.info(f"req_processor received {cloud_event.data}")
     data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
     try:
-        if dispatch_event(data):
+        action = data.get("action")
+
+        if action == "chunk_one_filing":
+            is_reuse, chunks = chunk_filing_and_save_embedding(**data)
+            if is_reuse:
+                logger.info(f"re-use existing {len(chunks.texts)} chunks for {data}")
+            else:
+                logger.info(f"created new {len(chunks.texts)} chunks for {data}")
+
             publish_response(data, True, "success")
+
+        elif action == "extract_one_filing":
+            result = extract_filing(**data)
+            if result:
+                logger.info(
+                    f"extraction with {data} found {result['n_trustee']} trustees"
+                )
+
+                result_topic = os.environ.get("TRUSTEE_RESULT_TOPIC")
+                if result_topic:
+                    publish_message(result, result_topic)  # type: ignore
+                    message = f"result published to {result_topic}"
+                else:
+                    message = "result discarded"
+
+                publish_response(data, True, message)
+
+        else:
+            logger.info(f"Unknown action {action}")
+
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
         logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
+
         publish_response(data, False, error_msg)
-
-
-def dispatch_event(data: dict[str, Any]) -> Any:
-    action = data.get("action")
-
-    if action == "chunk_one_filing":
-        is_reuse, chunks = chunk_filing_and_save_embedding(**data)
-        if is_reuse:
-            logger.info(f"re-use existing chunks for {data}")
-        else:
-            logger.info(f"created new chunks for {data}")
-        return chunks
-    elif action == "extract_one_filing":
-        result = extract_filing(**data)
-        if result:
-            logger.info(f"extraction with {data} found {result['n_trustee']} trustees")
-        return result
-    else:
-        logger.info(f"Unknown action {action}")
-        return None
 
 
 @functions_framework.cloud_event

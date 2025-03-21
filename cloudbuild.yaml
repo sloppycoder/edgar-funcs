@@ -3,6 +3,7 @@ substitutions:
   _RUNTIME: "python312"
   _REQ_TOPIC: "edgarai-request"
   _RES_TOPIC: "edgarai-response"
+  _TRUSTEE_RESULT_TOPIC: "edgarai-trustee-result"
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
@@ -58,7 +59,7 @@ steps:
       - "--entry-point=req_processor"
       - "--source=/workspace/function-source"
       - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+      - "STORAGE_PREFIX=${_STORAGE_PREFIX},TRUSTEE_RESULT_TOPIC=${_TRUSTEE_RESULT_TOPIC},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
 
   # Deploy resp_processor
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
