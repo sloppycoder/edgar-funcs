@@ -1,0 +1,96 @@
+[
+    {
+        "name": "cik",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "accession_number",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "date_filed",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "selected_chunks",
+        "type": "INTEGER",
+        "mode": "REPEATED"
+    },
+    {
+        "name": "selected_text",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "response",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "n_trustee",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "comp_info",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+            {
+                "name": "compensation_info_present",
+                "type": "BOOLEAN",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "trustees",
+                "type": "RECORD",
+                "mode": "REPEATED",
+                "fields": [
+                    {
+                        "name": "year",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "name",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "job_title",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "fund_compensation",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "fund_group_compensation",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "deferred_compensation",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "other_compensation",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    }
+                ]
+            },
+            {
+                "name": "notes",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            }
+        ]
+    }
+]

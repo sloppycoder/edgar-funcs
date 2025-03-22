@@ -99,13 +99,47 @@ def main(argv):
     elif parts[0] == "extract":
         data["action"] = "extract_one_filing"
         publish_request(data)
+    elif parts[0] == "trustee":
+        send_test_trustee_comp_result()
     else:
         print(f"Unknown command {sys.argv[1]}")
+
+
+def send_test_trustee_comp_result():
+    data = {
+        "cik": "1",
+        "accession_number": "1",
+        "date_filed": "2022-12-01",
+        "selected_chunks": [123, 456],
+        "selected_text": "some_text",
+        "response": "some_response",
+        "n_trustee": 10,
+        "comp_info": {
+            "compensation_info_present": True,
+            "trustees": [
+                {
+                    "year": "2022",
+                    "name": "stuff_name_1",
+                    "job_title": "title",
+                    "compensation": "1000",
+                },
+                {
+                    "year": "2022",
+                    "name": "stuff_name_2",
+                    "job_title": "title_stuff",
+                    "compensation": "100",
+                },
+            ],
+            "notes": "some_notes",
+        },
+    }
+    publish_message(data, "edgarai-trustee-result")
 
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
+
     if len(sys.argv) > 1:
         main(sys.argv)
