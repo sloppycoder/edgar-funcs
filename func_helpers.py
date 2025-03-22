@@ -7,7 +7,7 @@ import google.auth  # Add this import
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1
 
-MESSAGE_SOURCE = "edgar.funcs"
+logger = logging.getLogger(__name__)
 
 
 def setup_cloud_logging():
@@ -36,8 +36,13 @@ def publish_message(message: dict, topic_name: str):
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
-        future = publisher.publish(topic_path, json.dumps(message).encode("utf-8"))
+        content = json.dumps(message).encode("utf-8")
+        future = publisher.publish(topic_path, content)
         future.result()  # Ensure the publish succeeds
+
+        logger.debug(
+            f"Published message ID {future.result()} to {topic_name} with content {content}"
+        )
     else:
         logging.info(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
