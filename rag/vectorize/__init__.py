@@ -88,7 +88,7 @@ class TextChunksWithEmbedding:
             if bucket_name:
                 # use GCS bucket
                 bucket = gcs_client().bucket(bucket_name)
-                blob = bucket.blob(prefix + path)
+                blob = bucket.blob(f"{prefix}/{path}")
                 blob.upload_from_string(pickle.dumps(obj))
             else:
                 # save to local file system
@@ -120,7 +120,7 @@ class TextChunksWithEmbedding:
         if bucket_name:
             # use GCS bucket
             bucket = gcs_client().bucket(bucket_name)
-            blob = bucket.blob(prefix + path)
+            blob = bucket.blob(f"{prefix}/{path}")
             if blob.exists():
                 obj = pickle.loads(blob.download_as_bytes())
         else:
@@ -185,7 +185,7 @@ def chunk_filing_and_save_embedding(
             "accession_number": filing.accession_number,
             "date_filed": filing.date_filed,
             "model": embedding_model,
-            "dimension": dimension,
+            "dimension": embedding_dimension,
         }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
@@ -202,7 +202,7 @@ def _blob_path(
     **_,  # ignore any other parameters
 ):
     # return the path for storing a TextChunkWithEmbedding object
-    return f"{chunk_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
+    return f"chunks/{chunk_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
 
 
 def _storage_prefix(storage_base_path=os.environ.get("STORAGE_PREFIX", "")):
