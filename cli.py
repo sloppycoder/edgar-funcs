@@ -75,7 +75,7 @@ def sample_catalog_and_send_requests():
     df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
     assert len(df_filings) > 10000
 
-    df_cik = pd.read_csv("tmp/cik.csv")
+    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
     assert len(df_cik) > 1000
 
     df_filtered = df_filings[
