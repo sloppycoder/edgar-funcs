@@ -9,6 +9,11 @@ def mock_file_content(path):
         return f.read()
 
 
+def mock_binary_content(path):
+    with open(mockdata_path / path, "rb") as f:
+        return f.read()
+
+
 def mock_embedding(path):
     with open(mockdata_path / "embeddings" / path, "r") as f:
         return json.load(f)

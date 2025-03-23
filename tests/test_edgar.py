@@ -1,13 +1,16 @@
+import io
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
+from pympler import asizeof
 
 from edgar import (
     SECFiling,
     _index_html_path,
     parse_idx_filename,
 )
-from tests.utils import mock_file_content
+from tests.utils import mock_binary_content, mock_file_content
 
 
 def test_idx_filename2index_html_path():
@@ -54,3 +57,12 @@ def test_parse_old_485bpos_filing():
         assert len(filing.documents) == 4
         assert html_path.endswith("fi485.txt")
         assert html_content and "N-1A" in html_content
+
+
+def test_load_filing_catalog():
+    catalog_blob = mock_binary_content("pickle/catalog/all_485bpos_pd.pickle")
+    df_filings = pd.read_pickle(io.BytesIO(catalog_blob))
+    assert df_filings.size > 17000
+
+    mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
+    print(f"loaded catalog , used memory {mem_used:.2f} MB")
