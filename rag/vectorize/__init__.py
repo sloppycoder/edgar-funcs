@@ -170,6 +170,9 @@ def chunk_filing_and_save_embedding(
     **_,  # ignore any other parameters
 ) -> tuple[bool, TextChunksWithEmbedding]:
     try:
+        if refresh:
+            raise ValueError("refresh is True")
+
         existing_chunks = TextChunksWithEmbedding.load(
             cik=cik,
             accession_number=accession_number,
@@ -184,8 +187,6 @@ def chunk_filing_and_save_embedding(
             "cik": filing.cik,
             "accession_number": filing.accession_number,
             "date_filed": filing.date_filed,
-            "model": embedding_model,
-            "dimension": embedding_dimension,
         }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
