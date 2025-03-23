@@ -183,9 +183,7 @@ class SECFiling:
 
         content = edgar_file(self.index_html_path)
         if not content:
-            logger.debug(
-                f"Unable to download {self.index_headers_path}, perhaps the filing is too old?"  # noqa E501
-            )
+            logger.debug(f"Unable to download {self.index_html_path}")
             return "", []
 
         soup = BeautifulSoup(content, "html.parser")

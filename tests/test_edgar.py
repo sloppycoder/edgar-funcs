@@ -45,16 +45,16 @@ def test_parse_old_485bpos_filing():
     # so we must parse index.html to get the documents list
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(
-            cik="837276",
-            accession_number="0001047469-04-014621",
+            cik="1201932",
+            accession_number="0000950136-04-001365",
             prefer_index_headers=False,
         )
         html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
 
-        assert filing.cik == "837276" and filing.date_filed == "2004-04-30"
-        assert filing.accession_number == "0001047469-04-014621"
-        assert len(filing.documents) == 32
-        assert html_path.endswith("a2134387z485bpos.txt")
+        assert filing.cik == "1201932" and filing.date_filed == "2004-04-30"
+        assert filing.accession_number == "0000950136-04-001365"
+        assert len(filing.documents) == 9
+        assert html_path.endswith("file001.txt")
         assert html_content and "N-1A" in html_content
 
 

@@ -29,8 +29,8 @@ def test_chunk_txt_filing():
     # and the filing content can be in a txt file not html
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(
-            cik="39473",
-            accession_number="0000039473-03-000002",
+            cik="1201932",
+            accession_number="0000950136-04-001365",
             prefer_index_headers=False,
         )
         filing_path, filing_content = filing.get_doc_content("485BPOS", max_items=1)[0]
@@ -39,12 +39,12 @@ def test_chunk_txt_filing():
 
         chunks = chunk_text(filing_content, method="spacy")
 
-        assert len(chunks) == 177
-        # no chunk is empty or too short
-        assert all(chunk and len(chunk) > 10 for chunk in chunks)
-
         # uncomment to save chunks pickle file to mockdata folder
         # _save_chunks_mockdata(filing, chunks)
+
+        assert len(chunks) == 106
+        # no chunk is empty or too short
+        assert all(chunk and len(chunk) > 10 for chunk in chunks)
 
 
 def test_chunk_filing_with_difficult_table():

@@ -1,0 +1,91 @@
+```json
+{
+  "compensation_info_present": true,
+  "trustees": [
+    {
+      "year": "2004",
+      "name": "Michael Bozic",
+      "job_title": "Member of the Audit Committee, Member of the Governance Committee",
+      "fund_compensation": "668",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Charles A. Fiumefreddo",
+      "job_title": "Chairman of the Boards of the Retail Funds and the Institutional Funds",
+      "fund_compensation": "2267",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": {
+        "type": "annual fee for services and administrative services"
+      }
+    },
+    {
+      "year": "2004",
+      "name": "Edwin J. Garn",
+      "job_title": "Member of the Audit Committee, Member of the Governance Committee",
+      "fund_compensation": "668",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Wayne E. Hedien",
+      "job_title": "Member of the Audit Committee, Member of the Insurance Committee",
+      "fund_compensation": "668",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "James F. Higgins",
+      "job_title": null,
+      "fund_compensation": "0",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Dr. Manuel H. Johnson",
+      "job_title": "Chairman of the Audit Committee",
+      "fund_compensation": "972",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Joseph J. Kearns",
+      "job_title": "Deputy Chairman of the Audit Committee",
+      "fund_compensation": "179",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Michael Nugent",
+      "job_title": "Member of the Insurance Committee",
+      "fund_compensation": "862",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    },
+    {
+      "year": "2004",
+      "name": "Fergus Reid",
+      "job_title": "Member of the Governance Committee",
+      "fund_compensation": "179",
+      "fund_group_compensation": null,
+      "deferred_compensation": null,
+      "other_compensation": null
+    }
+  ],
+  "notes": "The provided snippet contains compensation data for the fiscal year ended January 31, 2004, and mentions a separate table showing aggregate compensation for the calendar year ended December 31, 2003, but that table is incomplete in the provided text.  The snippet also details compensation structures prior to August 1, 2003, and after April 1, 2004, including a deferred compensation plan.  Amounts are in USD.  Note that the fund group compensation is not explicitly provided for the year 2004 in the given extract."
+}
+```
