@@ -2,7 +2,6 @@ import base64
 import json
 import logging
 import os
-import sys
 import traceback
 
 import functions_framework
@@ -14,10 +13,8 @@ from func_helpers import (
     publish_response,
     setup_cloud_logging,
 )
-from rag.extract.llm import DEFAULT_LLM_MODEL
 from rag.extract.trustee import extract_filing
 from rag.vectorize import chunk_filing_and_save_embedding
-from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 
 setup_cloud_logging()
 logger = logging.getLogger(__name__)
@@ -82,64 +79,5 @@ def resp_processor(cloud_event: CloudEvent):
             logger.info(f"publish request for {params}")
 
 
-def main(argv):
-    parts = argv[1].split("/")
-    data = {
-        "cik": parts[1],
-        "accession_number": parts[2],
-        "embedding_model": GEMINI_EMBEDDING_MODEL,
-        "embedding_dimension": 768,
-        "model": DEFAULT_LLM_MODEL,
-        "run_extract": True,
-    }
-
-    if parts[0] == "chunk":
-        data["action"] = "chunk_one_filing"
-        publish_request(data)
-    elif parts[0] == "extract":
-        data["action"] = "extract_one_filing"
-        publish_request(data)
-    elif parts[0] == "trustee":
-        send_test_trustee_comp_result()
-    else:
-        print(f"Unknown command {sys.argv[1]}")
-
-
-def send_test_trustee_comp_result():
-    data = {
-        "cik": "1",
-        "accession_number": "1",
-        "date_filed": "2022-12-01",
-        "selected_chunks": [123, 456],
-        "selected_text": "some_text",
-        "response": "some_response",
-        "n_trustee": 10,
-        "comp_info": {
-            "compensation_info_present": True,
-            "trustees": [
-                {
-                    "year": "2022",
-                    "name": "stuff_name_1",
-                    "job_title": "title",
-                    "compensation": "1000",
-                },
-                {
-                    "year": "2022",
-                    "name": "stuff_name_2",
-                    "job_title": "title_stuff",
-                    "compensation": "100",
-                },
-            ],
-            "notes": "some_notes",
-        },
-    }
-    publish_message(data, "edgarai-trustee-result")
-
-
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    if len(sys.argv) > 1:
-        main(sys.argv)
+    pass
