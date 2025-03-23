@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from pympler import asizeof
 
 from edgar import (
     SECFiling,
@@ -46,16 +45,16 @@ def test_parse_old_485bpos_filing():
     # so we must parse index.html to get the documents list
     with patch("edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(
-            cik="39473",
-            accession_number="0000039473-03-000002",
+            cik="837276",
+            accession_number="0001047469-04-014621",
             prefer_index_headers=False,
         )
         html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
 
-        assert filing.cik == "39473" and filing.date_filed == "2003-02-28"
-        assert filing.accession_number == "0000039473-03-000002"
-        assert len(filing.documents) == 4
-        assert html_path.endswith("fi485.txt")
+        assert filing.cik == "837276" and filing.date_filed == "2004-04-30"
+        assert filing.accession_number == "0001047469-04-014621"
+        assert len(filing.documents) == 32
+        assert html_path.endswith("a2134387z485bpos.txt")
         assert html_content and "N-1A" in html_content
 
 
@@ -64,5 +63,6 @@ def test_load_filing_catalog():
     df_filings = pd.read_pickle(io.BytesIO(catalog_blob))
     assert df_filings.size > 17000
 
-    mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
-    print(f"loaded catalog , used memory {mem_used:.2f} MB")
+    # from pympler import asizeof
+    # mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
+    # print(f"loaded catalog , used memory {mem_used:.2f} MB")

@@ -1,7 +1,9 @@
 from unittest.mock import patch
 
 from edgar import SECFiling
+from rag.vectorize import TextChunksWithEmbedding
 from rag.vectorize.chunking import _is_line_empty, chunk_text, trim_html_content
+from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 from tests.utils import mock_file_content
 
 
@@ -41,6 +43,9 @@ def test_chunk_txt_filing():
         # no chunk is empty or too short
         assert all(chunk and len(chunk) > 10 for chunk in chunks)
 
+        # uncomment to save chunks pickle file to mockdata folder
+        # _save_chunks_mockdata(filing, chunks)
+
 
 def test_chunk_filing_with_difficult_table():
     # this filing has a weird table that was causing issues
@@ -69,3 +74,14 @@ def test_is_line_empty():
     assert _is_line_empty(" -83-")
     assert _is_line_empty(" wo- wb- xp")
     assert not _is_line_empty(" word ")
+
+
+def _save_chunks_mockdata(filing: SECFiling, text_chunks: list[str]):
+    metadata = {
+        "cik": filing.cik,
+        "accession_number": filing.accession_number,
+        "date_filed": filing.date_filed,
+    }
+    new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
+    new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
+    new_chunks.save()
