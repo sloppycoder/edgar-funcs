@@ -6,8 +6,14 @@ from typing import Any
 import google.auth  # Add this import
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1
+from google.oauth2 import service_account
 
 logger = logging.getLogger(__name__)
+
+scopes = ["https://www.googleapis.com/auth/pubsub"]
+credentials = service_account.Credentials.from_service_account_file(
+    os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=scopes
+)
 
 
 def setup_cloud_logging():
@@ -33,7 +39,7 @@ def get_default_project_id():
 def publish_message(message: dict, topic_name: str):
     gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
-        publisher = pubsub_v1.PublisherClient()
+        publisher = pubsub_v1.PublisherClient(credentials=credentials)
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
         content = json.dumps(message).encode("utf-8")
