@@ -94,16 +94,13 @@ def sample_catalog_and_send_requests():
         (df_filings["date_filed"] > "2004-01-01")
         & (df_filings["date_filed"] < "2004-12-31")
     ]
-    df_sample = (pd.merge(df_filtered, df_cik, on="cik")).sample(3)
+    df_sample = (pd.merge(df_filtered, df_cik, on="cik")).sample(30)
 
     for idx, row in df_sample.iterrows():
-        print(row)
-        request_for_chunking(
-            batch_id,
-            str(row["cik"]),
-            row["accession_number"],
-            run_extract=True,
-        )
+        cik = str(row["cik"])
+        accession_number = row["accession_number"]
+        print(f"requesting {batch_id},{cik},{accession_number}")
+        request_for_chunking(batch_id, cik, accession_number, run_extract=True)
 
 
 def _batch_id():
