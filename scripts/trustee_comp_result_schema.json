@@ -1,5 +1,10 @@
 [
     {
+        "name": "batch_id",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
         "name": "cik",
         "type": "STRING",
         "mode": "REQUIRED"

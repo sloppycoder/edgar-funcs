@@ -45,7 +45,9 @@ def req_processor(cloud_event: CloudEvent) -> None:
 
                 result_topic = os.environ.get("TRUSTEE_RESULT_TOPIC")
                 if result_topic:
-                    publish_message(result, result_topic)  # type: ignore
+                    result_message = dict(result)
+                    result_message["batch_id"] = data["batch_id"]
+                    publish_message(result_message, result_topic)
                     message = f"result published to {result_topic}"
                 else:
                     message = "result discarded"

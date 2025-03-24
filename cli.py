@@ -1,4 +1,7 @@
+import random
+import string
 import sys
+from datetime import datetime
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,8 +16,14 @@ from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 load_dotenv()
 
 
-def request_for_chunking(cik: str, accession_number: str, run_extract: bool = False):
+def request_for_chunking(
+    batch_id: str,
+    cik: str,
+    accession_number: str,
+    run_extract: bool = False,
+):
     data = {
+        "batch_id": batch_id,
         "action": "chunk_one_filing",
         "cik": cik,
         "accession_number": accession_number,
@@ -27,8 +36,9 @@ def request_for_chunking(cik: str, accession_number: str, run_extract: bool = Fa
     return data
 
 
-def request_for_extract(cik: str, accession_number: str):
+def request_for_extract(batch_id, cik: str, accession_number: str):
     data = {
+        "batch_id": batch_id,
         "action": "extract_one_filing",
         "cik": cik,
         "accession_number": accession_number,
@@ -86,14 +96,25 @@ def sample_catalog_and_send_requests():
 
     for idx, row in df_sample.iterrows():
         print(row)
-        request_for_chunking(str(row["cik"]), row["accession_number"], run_extract=True)
+        request_for_chunking(
+            _batch_id(),
+            str(row["cik"]),
+            row["accession_number"],
+            run_extract=True,
+        )
+
+
+def _batch_id():
+    tstamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    suffix = "".join(random.choices(string.ascii_lowercase, k=3))
+    return f"{tstamp}-{suffix}"
 
 
 def main(args):
     if args[0] == "chunk" and len(args) >= 3:
-        request_for_chunking(args[1], args[2])
+        request_for_chunking(_batch_id(), args[1], args[2])
     elif args[0] == "extract" and len(args) >= 3:
-        request_for_extract(args[1], args[2])
+        request_for_extract(_batch_id(), args[1], args[2])
     elif args[0] == "trustee":
         send_test_trustee_comp_result()
     elif args[0] == "sample":
