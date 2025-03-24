@@ -82,6 +82,8 @@ def send_test_trustee_comp_result():
 
 
 def sample_catalog_and_send_requests():
+    batch_id = _batch_id()
+
     df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
     assert len(df_filings) > 10000
 
@@ -92,12 +94,12 @@ def sample_catalog_and_send_requests():
         (df_filings["date_filed"] > "2004-01-01")
         & (df_filings["date_filed"] < "2004-12-31")
     ]
-    df_sample = (pd.merge(df_filtered, df_cik, on="cik")).sample(30)
+    df_sample = (pd.merge(df_filtered, df_cik, on="cik")).sample(3)
 
     for idx, row in df_sample.iterrows():
         print(row)
         request_for_chunking(
-            _batch_id(),
+            batch_id,
             str(row["cik"]),
             row["accession_number"],
             run_extract=True,
