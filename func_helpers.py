@@ -4,11 +4,14 @@ import os
 from typing import Any
 
 import google.auth  # Add this import
+from dotenv import load_dotenv
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1
 from google.oauth2 import service_account
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 scopes = ["https://www.googleapis.com/auth/pubsub"]
 credentials = service_account.Credentials.from_service_account_file(

@@ -4,7 +4,6 @@ import sys
 from datetime import datetime
 
 import pandas as pd
-from dotenv import load_dotenv
 
 from func_helpers import (
     publish_message,
@@ -12,8 +11,6 @@ from func_helpers import (
 )
 from rag.extract.llm import DEFAULT_LLM_MODEL
 from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
-
-load_dotenv()
 
 
 def request_for_chunking(
