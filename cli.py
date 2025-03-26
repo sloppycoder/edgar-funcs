@@ -78,7 +78,7 @@ def send_test_trustee_comp_result():
     publish_message(data, "edgarai-trustee-result")
 
 
-def sample_catalog_and_send_requests():
+def sample_catalog_and_send_requests(dryrun: bool):
     batch_id = _batch_id()
 
     df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
@@ -91,13 +91,24 @@ def sample_catalog_and_send_requests():
         (df_filings["date_filed"] > "2004-01-01")
         & (df_filings["date_filed"] < "2004-12-31")
     ]
-    df_sample = (pd.merge(df_filtered, df_cik, on="cik")).sample(30)
+    df_join = pd.merge(df_filtered, df_cik, on="cik")
 
-    for idx, row in df_sample.iterrows():
-        cik = str(row["cik"])
-        accession_number = row["accession_number"]
-        print(f"requesting {batch_id},{cik},{accession_number}")
-        request_for_chunking(batch_id, cik, accession_number, run_extract=True)
+    n_total, n_processed = len(df_join), 0
+
+    df_sample = df_join.sample(frac=0.01)
+
+    with open("tmp/processed.csv", "w") as f:
+        f.write("batch_id,cik,accession_number\n")
+        for idx, row in df_sample.iterrows():
+            cik = str(row["cik"])
+            accession_number = row["accession_number"]
+            f.write(f"{batch_id},{cik},{accession_number}\n")
+            if not dryrun:
+                request_for_chunking(batch_id, cik, accession_number, run_extract=True)
+
+            n_processed += 1
+
+    print(f"Requested {n_processed} filings out of {n_total}")
 
 
 def _batch_id():
@@ -114,7 +125,8 @@ def main(args):
     elif args[0] == "trustee":
         send_test_trustee_comp_result()
     elif args[0] == "sample":
-        sample_catalog_and_send_requests()
+        dry_run = len(args) > 1 and args[1] == "--dryrun"
+        sample_catalog_and_send_requests(dry_run)
     else:
         print("Unknown command")
 
