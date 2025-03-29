@@ -1,7 +1,7 @@
+import argparse
 import json
 import random
 import string
-import sys
 from datetime import datetime
 
 import pandas as pd
@@ -174,28 +174,76 @@ def _query_result(batch_id: str) -> list[dict]:
     return [dict(row) for row in query_job.result()]
 
 
-def main(args):
-    if args[0] == "chunk" and len(args) >= 3:
-        request_for_chunking(_batch_id(), args[1], args[2])
-    elif args[0] == "extract" and len(args) >= 3:
-        request_for_extract(_batch_id(), args[1], args[2])
-    elif args[0] == "trustee":
+def parse_cli():
+    parser = argparse.ArgumentParser(description="CLI for EDGAR functions")
+    parser.add_argument(
+        "command",
+        type=str,
+        choices=["chunk", "extract", "test", "sample", "export"],
+        help="Command to execute: chunk, extract, trustee, sample, or export",
+    )
+    parser.add_argument(
+        "cik",
+        type=str,
+        help="CIK of the filing",
+    )
+    parser.add_argument(
+        "accession_number",
+        type=str,
+        help="Accession Number of the filing",
+    )
+    parser.add_argument(
+        "--dryrun",
+        action="store_true",
+        default=False,
+        help="Run in dry-run mode",
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        help="Input file path",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Output file path",
+    )
+    parser.add_argument(
+        "--start",
+        type=str,
+        default="2024-01-01",
+        help="Start date in YYYY-MM-DD format (default: 2024-01-01)",
+    )
+    parser.add_argument(
+        "--end",
+        type=str,
+        default="2024-12-31",
+        help="End date in YYYY-MM-DD format (default: 2024-01-01)",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_cli()
+
+    if args.command == "chunk":
+        request_for_chunking(_batch_id(), args.cik, args.accession_number)
+    elif args.command == "extract":
+        request_for_extract(_batch_id(), args.cik, args.accession_number)
+    elif args.command == "test":
         send_test_trustee_comp_result()
-    elif args[0] == "sample":
-        dry_run = len(args) > 1 and args[1] == "--dryrun"
-        sample_catalog_and_send_requests("tmp/processed.csv", dry_run)
-    elif args[0] == "export":
-        input_file = args[1] if len(args) > 1 else ""
-        if not input_file:
-            print("Please provide the input file for export")
-            return
-        export_process_result(input_file, "tmp/output.jsonl")
+    elif args.command == "sample":
+        output_file = args.output if args.output else "tmp/processed.csv"
+        sample_catalog_and_send_requests(output_file, args.dryrun)
+    elif args.command == "export":
+        input_file = args.input if args.input else "tmp/processed.csv"
+        output_file = args.output if args.output else "tmp/seed_data.jsonl"
+        export_process_result(input_file, output_file)
     else:
         print("Unknown command")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main(sys.argv[1:])
-    else:
-        print("nothing to do")
+    main()
