@@ -89,7 +89,7 @@ class TrusteeComp(TypedDict):
     comp_info: dict[str, Any]
 
 
-def extract_filing(
+def extract_trustee_comp_from_filing(
     cik: str,
     accession_number: str,
     embedding_model: str,

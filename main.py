@@ -13,7 +13,7 @@ from func_helpers import (
     publish_response,
     setup_cloud_logging,
 )
-from rag.extract.trustee import extract_filing
+from rag.extract.trustee import extract_trustee_comp_from_filing
 from rag.vectorize import chunk_filing_and_save_embedding
 
 setup_cloud_logging()
@@ -37,7 +37,7 @@ def req_processor(cloud_event: CloudEvent) -> None:
             publish_response(data, True, "success")
 
         elif action == "extract_one_filing":
-            result = extract_filing(**data)
+            result = extract_trustee_comp_from_filing(**data)
             if result:
                 logger.info(
                     f"extraction with {data} found {result['n_trustee']} trustees"

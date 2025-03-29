@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from rag.extract.llm import DEFAULT_LLM_MODEL
-from rag.extract.trustee import extract_filing
+from rag.extract.trustee import extract_trustee_comp_from_filing
 from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 from tests.utils import mock_file_content
 
@@ -13,7 +13,7 @@ def test_extract_html_filing():
             "response/gemini-1.5-flash-002/1002427/0001133228-24-004879.txt"
         ),
     ):
-        result = extract_filing(
+        result = extract_trustee_comp_from_filing(
             cik="1002427",
             accession_number="0001133228-24-004879",
             embedding_model=GEMINI_EMBEDDING_MODEL,
@@ -35,7 +35,7 @@ def test_extract_txt_filing():
             "response/gemini-1.5-flash-002/1201932/0000950136-04-001365.txt"
         ),
     ):
-        result = extract_filing(
+        result = extract_trustee_comp_from_filing(
             cik="1201932",
             accession_number="0000950136-04-001365",
             embedding_model=GEMINI_EMBEDDING_MODEL,
