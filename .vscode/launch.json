@@ -13,7 +13,7 @@
             "justMyCode": false,
             "args": [
                 "export",
-                "tmp/processed_2009.csv",
+                "--input=tmp/processed_2009.csv"
             ]
         },
         {

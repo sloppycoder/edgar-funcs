@@ -80,13 +80,13 @@ def send_test_trustee_comp_result():
     publish_message(data, "edgarai-trustee-result")
 
 
-def sample_catalog_and_send_requests(output_file: str, dryrun: bool):
+def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage: int):
     df_filings = _get_filings_by_range("2004-01-01", "2004-12-31")
 
     batch_id = _batch_id()
     n_total, n_processed = len(df_filings), 0
 
-    df_sample = df_filings.sample(frac=0.01)
+    df_sample = df_filings.sample(frac=float(percentage) / 100)
 
     with open(output_file, "w") as f:
         f.write("batch_id,cik,accession_number\n")
@@ -99,7 +99,9 @@ def sample_catalog_and_send_requests(output_file: str, dryrun: bool):
 
             n_processed += 1
 
-    print(f"Requested {n_processed} filings out of {n_total}")
+    print(
+        f"Requested {n_processed} filings out of {n_total}, list saved to {output_file}"
+    )
 
 
 def export_process_result(input_file: str, output_file: str):
@@ -125,10 +127,13 @@ def export_process_result(input_file: str, output_file: str):
     )
 
     # Write each row as a JSON object to the output file in JSONL format
+    n_count = 0
     with open(output_file, "w") as f:
         for _, row in df_merged.iterrows():
             row_dict = row.to_dict()
+            n_count += 1
             f.write(json.dumps(row_dict) + "\n")
+    print(f"Exported {n_count} records to {output_file}")
 
 
 def _batch_id() -> str:
@@ -185,11 +190,15 @@ def parse_cli():
     parser.add_argument(
         "cik",
         type=str,
-        help="CIK of the filing",
+        nargs="?",
+        default=None,
+        help="CIK of the filing (optional)",
     )
     parser.add_argument(
         "accession_number",
         type=str,
+        nargs="?",
+        default=None,
         help="Accession Number of the filing",
     )
     parser.add_argument(
@@ -199,15 +208,25 @@ def parse_cli():
         help="Run in dry-run mode",
     )
     parser.add_argument(
+        "--percentage",
+        type=int,
+        default=20,
+        help="Percentage of filings to process (default: 20)",
+    )
+    parser.add_argument(
         "-i",
         "--input",
         type=str,
+        nargs="?",
+        default=None,
         help="Input file path",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
+        nargs="?",
+        default=None,
         help="Output file path",
     )
     parser.add_argument(
@@ -236,7 +255,7 @@ def main():
         send_test_trustee_comp_result()
     elif args.command == "sample":
         output_file = args.output if args.output else "tmp/processed.csv"
-        sample_catalog_and_send_requests(output_file, args.dryrun)
+        sample_catalog_and_send_requests(output_file, args.dryrun, args.percentage)
     elif args.command == "export":
         input_file = args.input if args.input else "tmp/processed.csv"
         output_file = args.output if args.output else "tmp/seed_data.jsonl"
