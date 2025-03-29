@@ -1,4 +1,5 @@
 import argparse
+import gzip
 import json
 import random
 import string
@@ -88,7 +89,7 @@ def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage:
 
     df_sample = df_filings.sample(frac=float(percentage) / 100)
 
-    with open(output_file, "w") as f:
+    with gzip.open(output_file, "wt") as f:
         f.write("batch_id,cik,accession_number\n")
         for idx, row in df_sample.iterrows():
             cik = str(row["cik"])
@@ -126,9 +127,12 @@ def export_process_result(input_file: str, output_file: str):
         how="left",
     )
 
+    # Ensure num_trustees column is set to 0 if NaN
+    df_merged["num_trustees"] = df_merged["num_trustees"].fillna(0)
+
     # Write each row as a JSON object to the output file in JSONL format
     n_count = 0
-    with open(output_file, "w") as f:
+    with gzip.open(output_file, "wt") as f:
         for _, row in df_merged.iterrows():
             row_dict = row.to_dict()
             n_count += 1
@@ -164,8 +168,10 @@ def _query_result(batch_id: str) -> list[dict]:
     client = bigquery.Client()
     query = """
         SELECT
-            batch_id, cik, accession_number, date_filed,
-            selected_chunks, selected_text, n_trustee,
+            cik, accession_number, date_filed,
+            selected_chunks as chunks_used,
+            selected_text as relevant_text,
+            n_trustee as num_trustees,
             response trustees_comp
         FROM `edgar2.trustee_comp_result`
         WHERE batch_id = @batch_id
@@ -254,11 +260,11 @@ def main():
     elif args.command == "test":
         send_test_trustee_comp_result()
     elif args.command == "sample":
-        output_file = args.output if args.output else "tmp/processed.csv"
+        output_file = args.output if args.output else "tmp/processed.csv.gz"
         sample_catalog_and_send_requests(output_file, args.dryrun, args.percentage)
     elif args.command == "export":
         input_file = args.input if args.input else "tmp/processed.csv"
-        output_file = args.output if args.output else "tmp/seed_data.jsonl"
+        output_file = args.output if args.output else "tmp/seed_data.jsonl.gz"
         export_process_result(input_file, output_file)
     else:
         print("Unknown command")
