@@ -1,9 +1,11 @@
+import json
 import random
 import string
 import sys
 from datetime import datetime
 
 import pandas as pd
+from google.cloud import bigquery
 
 from func_helpers import (
     publish_message,
@@ -78,26 +80,15 @@ def send_test_trustee_comp_result():
     publish_message(data, "edgarai-trustee-result")
 
 
-def sample_catalog_and_send_requests(dryrun: bool):
+def sample_catalog_and_send_requests(output_file: str, dryrun: bool):
+    df_filings = _get_filings_by_range("2004-01-01", "2004-12-31")
+
     batch_id = _batch_id()
+    n_total, n_processed = len(df_filings), 0
 
-    df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
-    assert len(df_filings) > 10000
+    df_sample = df_filings.sample(frac=0.01)
 
-    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
-    assert len(df_cik) > 1000
-
-    df_filtered = df_filings[
-        (df_filings["date_filed"] > "2004-01-01")
-        & (df_filings["date_filed"] < "2004-12-31")
-    ]
-    df_join = pd.merge(df_filtered, df_cik, on="cik")
-
-    n_total, n_processed = len(df_join), 0
-
-    df_sample = df_join.sample(frac=0.01)
-
-    with open("tmp/processed.csv", "w") as f:
+    with open(output_file, "w") as f:
         f.write("batch_id,cik,accession_number\n")
         for idx, row in df_sample.iterrows():
             cik = str(row["cik"])
@@ -111,10 +102,76 @@ def sample_catalog_and_send_requests(dryrun: bool):
     print(f"Requested {n_processed} filings out of {n_total}")
 
 
-def _batch_id():
+def export_process_result(input_file: str, output_file: str):
+    df_processed = pd.read_csv(input_file)
+    df_processed["cik"] = df_processed["cik"].astype(str)
+    assert len(df_processed) > 0, "No processed data found in the input file"
+
+    batch_id = df_processed["batch_id"].iloc[0]
+    df_result = pd.DataFrame(_query_result(batch_id))
+
+    # Perform a left join with df_procesed on the left side
+    df_merged = pd.merge(
+        df_processed, df_result, on=["cik", "accession_number"], how="left"
+    )
+
+    df_filings = _get_filings_by_range("2000-01-01", "2024-12-31")
+    # Add company_name column by looking up from df_filings
+    df_merged = pd.merge(
+        df_merged,
+        df_filings[["cik", "accession_number", "company_name"]],
+        on=["cik", "accession_number"],
+        how="left",
+    )
+
+    # Write each row as a JSON object to the output file in JSONL format
+    with open(output_file, "w") as f:
+        for _, row in df_merged.iterrows():
+            row_dict = row.to_dict()
+            f.write(json.dumps(row_dict) + "\n")
+
+
+def _batch_id() -> str:
     tstamp = datetime.now().strftime("%Y%m%d%H%M%S")
     suffix = "".join(random.choices(string.ascii_lowercase, k=3))
     return f"{tstamp}-{suffix}"
+
+
+def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
+    df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
+    assert len(df_filings) > 10000
+
+    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
+    assert len(df_cik) > 1000
+
+    df_filtered = df_filings[
+        (df_filings["date_filed"] > start_date) & (df_filings["date_filed"] < end_date)
+    ]
+    df_result = pd.merge(df_filtered, df_cik, on="cik")
+    df_result["cik"] = df_result["cik"].astype(str)
+    return df_result
+
+
+def _query_result(batch_id: str) -> list[dict]:
+    """
+    Query BigQuery table edgar2.trustee_comp_result to get the results for a specific batch_id.
+    """
+    client = bigquery.Client()
+    query = """
+        SELECT
+            batch_id, cik, accession_number, date_filed,
+            selected_chunks, selected_text, n_trustee,
+            response trustees_comp
+        FROM `edgar2.trustee_comp_result`
+        WHERE batch_id = @batch_id
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("batch_id", "STRING", batch_id),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    return [dict(row) for row in query_job.result()]
 
 
 def main(args):
@@ -126,7 +183,13 @@ def main(args):
         send_test_trustee_comp_result()
     elif args[0] == "sample":
         dry_run = len(args) > 1 and args[1] == "--dryrun"
-        sample_catalog_and_send_requests(dry_run)
+        sample_catalog_and_send_requests("tmp/processed.csv", dry_run)
+    elif args[0] == "export":
+        input_file = args[1] if len(args) > 1 else ""
+        if not input_file:
+            print("Please provide the input file for export")
+            return
+        export_process_result(input_file, "tmp/output.jsonl")
     else:
         print("Unknown command")
 
