@@ -34,7 +34,7 @@ def batch_embedding(
     if model == OPENAI_EMBEDDING_MODEL:
         max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
     elif model == GEMINI_EMBEDDING_MODEL:
-        max_tokens_per_request, max_chunks_per_request = 12000, 250
+        max_tokens_per_request, max_chunks_per_request = 10000, 200
     else:
         raise ValueError(f"Unsupported embedding model {model}")
 
