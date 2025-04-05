@@ -12,7 +12,7 @@ def test_extract_html_filing():
     with patch(
         "rag.extract.trustee.ask_model",
         return_value=mock_file_content(
-            "response/gemini-1.5-flash-002/1002427/0001133228-24-004879.txt"
+            "response/gemini-1.5-flash-002/1002427/0001133228-24-004879_trustee_comp.txt"
         ),
     ):
         result = extract_trustee_comp_from_filing(
