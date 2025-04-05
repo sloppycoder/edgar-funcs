@@ -64,7 +64,8 @@ steps:
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=req_processor"
       - "--source=/workspace/function-source"
-      - "--set-secret OPENAI_API_KEY=projects/${_SECRET_MANAGER_PROJECT}/secrets/${_SECRET_NAME}:latest"
+      - "--set-secret"
+      - "OPENAI_API_KEY=projects/${_SECRET_MANAGER_PROJECT}/secrets/${_SECRET_NAME}:latest"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},TRUSTEE_RESULT_TOPIC=${_TRUSTEE_RESULT_TOPIC},RESPONSE_TOPIC=${_RES_TOPIC},EMBEDDING_MODEL=${_EMBEDDING_MODEL},EMBEDDING_DIMENSION=${_EMBEDDING_DIMENSION},EXTRACTION_MODEL=${_EXTRACTION_MODEL},LOG_LEVEL=${_LOG_LEVEL}"
 
