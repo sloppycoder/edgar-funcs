@@ -9,7 +9,7 @@ from edgar import (
     _index_html_path,
     parse_idx_filename,
 )
-from tests.utils import mock_binary_content, mock_file_content
+from tests.utils import mock_file_content
 
 
 def test_idx_filename2index_html_path():
@@ -59,7 +59,9 @@ def test_parse_old_485bpos_filing():
 
 
 def test_load_filing_catalog():
-    catalog_blob = mock_binary_content("pickle/catalog/all_485bpos_pd.pickle")
+    catalog_blob = mock_file_content(
+        "pickle/catalog/all_485bpos_pd.pickle", is_binary=True
+    )
     df_filings = pd.read_pickle(io.BytesIO(catalog_blob))
     assert df_filings.size > 17000
 

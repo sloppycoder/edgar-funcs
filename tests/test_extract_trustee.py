@@ -1,9 +1,11 @@
 from unittest.mock import patch
 
-from rag.extract.llm import DEFAULT_LLM_MODEL
+from func_helpers import model_settings
 from rag.extract.trustee import extract_trustee_comp_from_filing
-from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
+from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content
+
+embedding_model, embedding_dimension, extraction_model = model_settings()
 
 
 def test_extract_html_filing():
@@ -16,9 +18,10 @@ def test_extract_html_filing():
         result = extract_trustee_comp_from_filing(
             cik="1002427",
             accession_number="0001133228-24-004879",
-            embedding_model=GEMINI_EMBEDDING_MODEL,
-            embedding_dimension=768,
-            model=DEFAULT_LLM_MODEL,
+            embedding_model=embedding_model,
+            embedding_dimension=embedding_dimension,
+            model=extraction_model,
+            chunk_algo_version=CHUNK_ALORITHM_VERSION,
         )
         assert (
             result
@@ -38,9 +41,10 @@ def test_extract_txt_filing():
         result = extract_trustee_comp_from_filing(
             cik="1201932",
             accession_number="0000950136-04-001365",
-            embedding_model=GEMINI_EMBEDDING_MODEL,
-            embedding_dimension=768,
-            model=DEFAULT_LLM_MODEL,
+            embedding_model=embedding_model,
+            embedding_dimension=embedding_dimension,
+            model=extraction_model,
+            chunk_algo_version=CHUNK_ALORITHM_VERSION,
         )
         assert (
             result

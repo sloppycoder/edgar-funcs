@@ -3,13 +3,16 @@ from unittest.mock import patch
 import pytest
 
 from edgar import SECFiling
+from func_helpers import model_settings
 from rag.vectorize import (
     TextChunksWithEmbedding,
     _storage_prefix,
     chunk_filing,
 )
-from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
-from tests.utils import mock_embedding, mock_file_content
+from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
+from tests.utils import mock_file_content, mock_json_dict
+
+embedding_model, embedding_dimension, _ = model_settings()
 
 
 def test_one_filing_chunk_save_load():
@@ -22,9 +25,10 @@ def test_one_filing_chunk_save_load():
         text_chunks = chunk_filing(filing)
         assert text_chunks
 
+    mock_json_path = f"embeddings/{embedding_model}_{embedding_dimension}/1002427/0001133228-24-004879.json"  # noqa E501
     with patch(
         "rag.vectorize.batch_embedding",
-        return_value=mock_embedding("1002427/0001133228-24-004879.json"),
+        return_value=mock_json_dict(mock_json_path),
     ):
         chunks = TextChunksWithEmbedding(
             text_chunks,
@@ -32,16 +36,18 @@ def test_one_filing_chunk_save_load():
                 "cik": filing.cik,
                 "accession_number": filing.accession_number,
                 "date_filed": filing.date_filed,
+                "chunk_algo_version": CHUNK_ALORITHM_VERSION,
             },
         )
-        chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
+        chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
         assert chunks.is_ready() and chunks.save() is None
 
     restored_chunks = TextChunksWithEmbedding.load(
         cik="1002427",
         accession_number="0001133228-24-004879",
-        model=GEMINI_EMBEDDING_MODEL,
-        dimension=768,
+        model=embedding_model,
+        dimension=embedding_dimension,
+        chunk_algo_version=CHUNK_ALORITHM_VERSION,
     )
     assert restored_chunks and restored_chunks.is_ready()
     assert chunks.texts == restored_chunks.texts
@@ -53,8 +59,9 @@ def test_load_non_existent_chunks():
         TextChunksWithEmbedding.load(
             cik="blah",
             accession_number="blah",
-            model=GEMINI_EMBEDDING_MODEL,
-            dimension=768,
+            model=embedding_model,
+            dimension=embedding_dimension,
+            chunk_algo_version=CHUNK_ALORITHM_VERSION,
         )
 
 

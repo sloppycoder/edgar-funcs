@@ -9,11 +9,10 @@ import pandas as pd
 from google.cloud import bigquery
 
 from func_helpers import (
+    model_settings,
     publish_message,
     publish_request,
 )
-from rag.extract.llm import DEFAULT_LLM_MODEL
-from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 
 
 def request_for_chunking(
@@ -22,14 +21,15 @@ def request_for_chunking(
     accession_number: str,
     run_extract: bool = False,
 ):
+    embedding_model, embedding_dimension, extraction_model = model_settings()
     data = {
         "batch_id": batch_id,
         "action": "chunk_one_filing",
         "cik": cik,
         "accession_number": accession_number,
-        "embedding_model": GEMINI_EMBEDDING_MODEL,
-        "embedding_dimension": 768,
-        "model": DEFAULT_LLM_MODEL,
+        "embedding_model": embedding_model,
+        "embedding_dimension": embedding_dimension,
+        "model": extraction_model,
         "run_extract": run_extract,
     }
     publish_request(data)
@@ -37,14 +37,15 @@ def request_for_chunking(
 
 
 def request_for_extract(batch_id, cik: str, accession_number: str):
+    embedding_model, embedding_dimension, extraction_model = model_settings()
     data = {
         "batch_id": batch_id,
         "action": "extract_one_filing",
         "cik": cik,
         "accession_number": accession_number,
-        "embedding_model": GEMINI_EMBEDDING_MODEL,
-        "embedding_dimension": 768,
-        "model": DEFAULT_LLM_MODEL,
+        "embedding_model": embedding_model,
+        "embedding_dimension": embedding_dimension,
+        "model": extraction_model,
     }
     publish_request(data)
     return data
@@ -163,7 +164,8 @@ def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
 
 def _query_result(batch_id: str) -> list[dict]:
     """
-    Query BigQuery table edgar2.trustee_comp_result to get the results for a specific batch_id.
+    Query BigQuery table edgar2.trustee_comp_result to
+    get the results for a specific batch_id.
     """
     client = bigquery.Client()
     query = """

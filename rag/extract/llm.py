@@ -10,8 +10,6 @@ from ..helper import init_vertaxai, openai_client
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LLM_MODEL = "gemini-1.5-flash-002"
-
 
 def ask_model(model: str, prompt: str) -> Optional[str]:
     if model.startswith("gemini"):

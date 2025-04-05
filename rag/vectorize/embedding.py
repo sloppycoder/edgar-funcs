@@ -8,11 +8,17 @@ from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
 from ..helper import init_vertaxai, openai_client
 
-# models used for embeddings
-OPENAI_EMBEDDING_MODEL = "text-embedding-ada-002"
-GEMINI_EMBEDDING_MODEL = "text-embedding-005"
-
 logger = logging.getLogger(__name__)
+
+_OPENAI_EMBEDDING_MODELS = [
+    "text-embedding-3-small",
+    "text-embedding-3-large",
+    "text-embedding-ada-002",
+]
+_GEMINI_EMBEDDING_MODELS = [
+    "text-embedding-005",
+    "gecko",
+]
 
 
 def batch_embedding(
@@ -31,9 +37,9 @@ def batch_embedding(
     Returns:
         list[list[float]]: A list of embeddings (one embedding per chunk)
     """
-    if model == OPENAI_EMBEDDING_MODEL:
+    if model in _OPENAI_EMBEDDING_MODELS:
         max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
-    elif model == GEMINI_EMBEDDING_MODEL:
+    elif model in _GEMINI_EMBEDDING_MODELS:
         max_tokens_per_request, max_chunks_per_request = 10000, 200
     else:
         raise ValueError(f"Unsupported embedding model {model}")
@@ -41,7 +47,7 @@ def batch_embedding(
     # tiktoken does not support Gemini model
     # use OpenAI as stand-in.
     # since token limit is an OpenAI issue anyways.
-    encoding = tiktoken.encoding_for_model(OPENAI_EMBEDDING_MODEL)
+    encoding = tiktoken.encoding_for_model("text-embedding-ada-002")
 
     embeddings = []
 
@@ -90,12 +96,12 @@ def _call_embedding_api(
     task_type: str,
     dimension: int,
 ) -> list[list[float]]:
-    if model == OPENAI_EMBEDDING_MODEL:
+    if model in _OPENAI_EMBEDDING_MODELS:
         return _call_openai_embedding_api(
             content,
             model=model,
         )
-    elif model == GEMINI_EMBEDDING_MODEL:
+    elif model in _GEMINI_EMBEDDING_MODELS:
         return _call_gemini_embedding_api(
             content,
             model=model,

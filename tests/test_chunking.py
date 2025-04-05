@@ -1,10 +1,12 @@
 from unittest.mock import patch
 
 from edgar import SECFiling
+from func_helpers import model_settings
 from rag.vectorize import TextChunksWithEmbedding
 from rag.vectorize.chunking import _is_line_empty, chunk_text, trim_html_content
-from rag.vectorize.embedding import GEMINI_EMBEDDING_MODEL
 from tests.utils import mock_file_content
+
+embedding_model, embedding_dimension, _ = model_settings()
 
 
 def test_chunk_html_filing():
@@ -82,6 +84,7 @@ def _save_chunks_mockdata(filing: SECFiling, text_chunks: list[str]):
         "accession_number": filing.accession_number,
         "date_filed": filing.date_filed,
     }
+    embedding_model, embedding_dimension, _ = model_settings()
     new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-    new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
+    new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
     new_chunks.save()

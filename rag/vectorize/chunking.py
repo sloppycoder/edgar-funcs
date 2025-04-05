@@ -7,8 +7,15 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+# IMPORTANT:
+# updaet the version if chunk size or chunking details are updated!
+#
+# the chunked text and their embeddings are store in pickle file for faster load
+# update the chunking detail without version update can have unpredictable results
+# when older and potentially obselete pickle files are loaded
+CHUNK_ALORITHM_VERSION = "3"
+
 DEFAULT_TEXT_CHUNK_SIZE = 3500
-ALORITHM_VERSION = "3"
 
 
 def chunk_text(

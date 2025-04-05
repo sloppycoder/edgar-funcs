@@ -8,8 +8,8 @@ from typing import TypedDict
 from edgar import SECFiling
 
 from ..helper import gcs_client
-from .chunking import ALORITHM_VERSION, chunk_text, trim_html_content
-from .embedding import GEMINI_EMBEDDING_MODEL, OPENAI_EMBEDDING_MODEL, batch_embedding
+from .chunking import chunk_text, trim_html_content
+from .embedding import batch_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ def chunk_filing_and_save_embedding(
             "date_filed": filing.date_filed,
         }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        new_chunks.get_embeddings(model=GEMINI_EMBEDDING_MODEL, dimension=768)
+        new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
         new_chunks.save()
         return False, new_chunks
 

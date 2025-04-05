@@ -19,6 +19,23 @@ credentials = service_account.Credentials.from_service_account_file(
 )
 
 
+def model_settings():
+    extraction_model = os.environ.get("EXTRACTION_MODEL")
+    if not extraction_model:
+        raise RuntimeError("EXTRACTION_MODEL not set")
+
+    embedding_model = os.environ.get("EMBEDDING_MODEL")
+    if not embedding_model:
+        raise RuntimeError("EMBEDDING_MODEL not set")
+
+    dimension = os.environ.get("EMBEDDING_DIMENSION", "0")
+    try:
+        embedding_dimension = int(dimension)
+        return embedding_model, embedding_dimension, extraction_model
+    except ValueError:
+        raise RuntimeError("EMBEDDING_DIMENSION must be set to a integer value")
+
+
 def setup_cloud_logging():
     # Only initialize Google Cloud Logging in Cloud Run
     if os.getenv("K_SERVICE"):
