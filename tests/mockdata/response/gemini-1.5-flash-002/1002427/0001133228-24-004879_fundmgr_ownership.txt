@@ -1,0 +1,36 @@
+
+{
+  "managers": [
+    {
+      "name": "Dennis P. Lynch",
+      "fund": "N/A",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "Sam G. Chainani",
+      "fund": "N/A",
+      "ownership_range": "50,001 - 100,000"
+    },
+    {
+      "name": "Jason C. Yeung",
+      "fund": "N/A",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "Armistead B. Nash",
+      "fund": "N/A",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "David S. Cohen",
+      "fund": "N/A",
+      "ownership_range": "10,001 - 50,000"
+    },
+    {
+      "name": "Alexander T. Norton",
+      "fund": "N/A",
+      "ownership_range": "50,001 - 100,000"
+    }
+  ],
+  "notes": "Ownership information as of December 31, 2023.  Fund name not specified in the provided snippet.  IMAP (presumably a type of investment management account) is mentioned in relation to notional holdings."
+}

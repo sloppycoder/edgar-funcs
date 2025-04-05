@@ -112,7 +112,7 @@ def extract_fundmgr_ownership_from_filing(
         accession_number=accession_number,
         model=embedding_model,
         dimension=embedding_dimension,
-        chunk_version=chunk_algo_version,
+        chunk_algo_version=chunk_algo_version,
     )
     queries = _load_fundmgr_ownership_queries(
         embedding_model=embedding_model, embedding_dimension=embedding_dimension
@@ -126,13 +126,14 @@ def extract_fundmgr_ownership_from_filing(
 
 
 def _load_fundmgr_ownership_queries(embedding_model: str, embedding_dimension: int):
-    cik, accession_number = "0", "fundmgr_ownership_queries"
+    cik, accession_number, chunk_algo_version = "0", "fundmgr_ownership_queries", "0"
     try:
         return TextChunksWithEmbedding.load(
             cik=cik,
             accession_number=accession_number,
             model=embedding_model,
             dimension=embedding_dimension,
+            chunk_algo_version=chunk_algo_version,
         )
     except ValueError:
         # saved queries vectors not found
@@ -143,10 +144,11 @@ def _load_fundmgr_ownership_queries(embedding_model: str, embedding_dimension: i
             metadata={
                 "cik": cik,
                 "accession_number": accession_number,
+                "chunk_algo_version": chunk_algo_version,
             },
         )
         queries.get_embeddings(model=embedding_model, dimension=embedding_dimension)
-        # queries.save()
+        queries.save()
         return queries
 
 
@@ -168,7 +170,7 @@ def _extract_fundmgr_ownership(
         "ownership_info": {},
     }
 
-    for method in ["appearance", "distance"]:
+    for method in ["distance", "appearance"]:
         relevant_chunks, relevant_text = _find_relevant_text(
             queries,
             chunks,

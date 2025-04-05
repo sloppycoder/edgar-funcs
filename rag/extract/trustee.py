@@ -94,6 +94,7 @@ def extract_trustee_comp_from_filing(
     accession_number: str,
     embedding_model: str,
     embedding_dimension: int,
+    chunk_algo_version: str,
     model: str,
     **_,  # ignore any other parameters
 ) -> TrusteeComp | None:
@@ -102,6 +103,7 @@ def extract_trustee_comp_from_filing(
         accession_number=accession_number,
         model=embedding_model,
         dimension=embedding_dimension,
+        chunk_algo_version=chunk_algo_version,
     )
     queries = _load_trustee_comp_queries(
         embedding_model=embedding_model, embedding_dimension=embedding_dimension
@@ -115,13 +117,14 @@ def extract_trustee_comp_from_filing(
 
 
 def _load_trustee_comp_queries(embedding_model: str, embedding_dimension: int):
-    cik, accession_number = "0", "trustee_queries"
+    cik, accession_number, chunk_algo_version = "0", "trustee_queries", "0"
     try:
         return TextChunksWithEmbedding.load(
             cik=cik,
             accession_number=accession_number,
             model=embedding_model,
             dimension=embedding_dimension,
+            chunk_algo_version=chunk_algo_version,
         )
     except ValueError:
         # saved queries vectors not found
@@ -132,6 +135,7 @@ def _load_trustee_comp_queries(embedding_model: str, embedding_dimension: int):
             metadata={
                 "cik": cik,
                 "accession_number": accession_number,
+                "chunk_algo_version": chunk_algo_version,
             },
         )
         queries.get_embeddings(model=embedding_model, dimension=embedding_dimension)
@@ -194,7 +198,7 @@ def _find_relevant_text(
     chunks: TextChunksWithEmbedding,
     method: str,
 ):
-    relevance_result = nearest_chunks(queries.embeddings, chunks.embeddings, limit=20)
+    relevance_result = nearest_chunks(queries.embeddings, chunks.embeddings, top_k=20)
     if not relevance_result:
         return [], ""
 

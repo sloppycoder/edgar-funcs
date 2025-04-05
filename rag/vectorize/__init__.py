@@ -20,7 +20,7 @@ class TextEmbeddingMetadata(TypedDict):
     date_filed: str
     model: str
     dimension: int
-    chunk_version: str
+    chunk_algo_version: str
 
 
 class TextChunksWithEmbedding:
@@ -37,7 +37,7 @@ class TextChunksWithEmbedding:
             "date_filed": "",
             "model": "",
             "dimension": 0,
-            "chunk_version": ALORITHM_VERSION,
+            "chunk_algo_version": "0",
         },
     ):
         if not texts:
@@ -103,14 +103,14 @@ class TextChunksWithEmbedding:
         accession_number: str,
         model: str,
         dimension: int,
-        chunk_version: str = ALORITHM_VERSION,
+        chunk_algo_version: str,
     ) -> "TextChunksWithEmbedding":
         path = _blob_path(
             cik=cik,
             accession_number=accession_number,
             model=model,
             dimension=dimension,
-            chunk_version=chunk_version,
+            chunk_algo_version=chunk_algo_version,
         )
         bucket_name, prefix = _storage_prefix()
         obj = None
@@ -163,6 +163,7 @@ def chunk_filing_and_save_embedding(
     accession_number: str,
     embedding_model: str,
     embedding_dimension: int,
+    chunk_algo_version: str,
     refresh: bool = False,
     **_,  # ignore any other parameters
 ) -> tuple[bool, TextChunksWithEmbedding]:
@@ -175,6 +176,7 @@ def chunk_filing_and_save_embedding(
             accession_number=accession_number,
             model=embedding_model,
             dimension=embedding_dimension,
+            chunk_algo_version=chunk_algo_version,
         )
         return True, existing_chunks
     except ValueError:
@@ -196,11 +198,13 @@ def _blob_path(
     accession_number: str,
     model: str,
     dimension: int,
-    chunk_version: str = ALORITHM_VERSION,
+    chunk_algo_version: str,
     **_,  # ignore any other parameters
 ):
     # return the path for storing a TextChunkWithEmbedding object
-    return f"chunks/{chunk_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
+    return (
+        f"chunks/{chunk_algo_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
+    )
 
 
 def _storage_prefix(storage_base_path=os.environ.get("STORAGE_PREFIX", "")):

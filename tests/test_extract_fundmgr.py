@@ -1,9 +1,10 @@
-import pytest
+from unittest.mock import patch
 
 from edgar import SECFiling
 from rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from rag.vectorize import TextChunksWithEmbedding
 from rag.vectorize.chunking import chunk_text, trim_html_content
+from tests.utils import mock_file_content
 
 embedding_model, embedding_dimension, extraction_model = (
     "text-embedding-3-small",
@@ -12,27 +13,34 @@ embedding_model, embedding_dimension, extraction_model = (
 )
 
 
-@pytest.mark.skip("temp")
 def test_extract_fundmgr_ownership():
-    # with patch(
-    #     "rag.extract.fundmgr.ask_model",
-    #     return_value=mock_file_content(
-    #         "response/gemini-1.5-flash-002/1002427/0001133228-24-004879.txt"
-    #     ),
-    # ):
-    # cik, accession_number, chunk_algo_version = "19034", "0001104659-24-051926", "4"
-    cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "3"
-    # _prep_filing(cik, accession_number, chunk_algo_version)
+    with patch(
+        "rag.extract.fundmgr.ask_model",
+        return_value=mock_file_content(
+            "response/gemini-1.5-flash-002/1002427/0001133228-24-004879_fundmgr_ownership.txt"
+        ),
+    ):
+        # cik, accession_number, chunk_algo_version = "19034", "0001104659-24-051926", "4"
+        cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "4"
 
-    result = extract_fundmgr_ownership_from_filing(
-        cik=cik,
-        accession_number=accession_number,
-        embedding_model=embedding_model,
-        embedding_dimension=embedding_dimension,
-        model=extraction_model,
-        chunk_algo_version=chunk_algo_version,
-    )
-    assert result and result["ownership_info"]
+        # uncomment the following if test data does not exist
+        # _prep_filing(cik, accession_number, chunk_algo_version)
+
+        result = extract_fundmgr_ownership_from_filing(
+            cik=cik,
+            accession_number=accession_number,
+            embedding_model=embedding_model,
+            embedding_dimension=embedding_dimension,
+            model=extraction_model,
+            chunk_algo_version=chunk_algo_version,
+        )
+        assert result and result["ownership_info"]
+        managers = result["ownership_info"]["managers"]
+        assert len(managers) == 6
+        assert (
+            managers[0]["name"] == "Dennis P. Lynch"
+            and managers[0]["ownership_range"] == "Over 1,000,000"
+        )
 
 
 def _prep_filing(cik: str, accession_number: str, chunk_algo_version: str):
