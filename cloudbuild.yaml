@@ -1,4 +1,5 @@
 substitutions:
+  _SM_PROJECT_ID: "edgar-ai"
   _REGION: "us-central1"
   _RUNTIME: "python312"
   _REQ_TOPIC: "edgarai-request"
@@ -7,6 +8,11 @@ substitutions:
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
+  _EMBEDDING_MODEL: "text-embedding-005"
+  _EMBEDDING_DIMENSION: "768"
+  _EXTRACTION_MODEL: "gemini-2.0-flash"
+  _SECRET_MANAGER_PROJECT: "edgar-ai"
+  _SECRET_NAME: "openai-api-key"
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -58,8 +64,15 @@ steps:
       - "--trigger-topic=${_REQ_TOPIC}"
       - "--entry-point=req_processor"
       - "--source=/workspace/function-source"
+      - "--set-secret OPENAI_API_KEY=projects/${_SECRET_MANAGER_PROJECT}/secrets/${_SECRET_NAME}:latest"
       - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},TRUSTEE_RESULT_TOPIC=${_TRUSTEE_RESULT_TOPIC},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+      - "STORAGE_PREFIX=${_STORAGE_PREFIX},\"
+      - "TRUSTEE_RESULT_TOPIC=${_TRUSTEE_RESULT_TOPIC},\"
+      - "RESPONSE_TOPIC=${_RES_TOPIC},\"
+      - "EMBEDDING_MODEL=${_EMBEDDING_MODEL},\"
+      - "EMBEDDING_DIMENSION=${_EMBEDDING_DIMENSION},\"
+      - "EXTRACTION_MODEL=${_EXTRACTION_MODEL}"
+      - "LOG_LEVEL=${_LOG_LEVEL}"
 
   # Deploy resp_processor
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -80,4 +93,6 @@ steps:
       - "--entry-point=resp_processor"
       - "--source=/workspace/function-source"
       - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},REQUEST_TOPIC=${_REQ_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+      - "STORAGE_PREFIX=${_STORAGE_PREFIX},\"
+      - "REQUEST_TOPIC=${_REQ_TOPIC},\"
+      - "LOG_LEVEL=${_LOG_LEVEL}"
