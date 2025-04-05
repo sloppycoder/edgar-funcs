@@ -11,7 +11,7 @@ substitutions:
   _EMBEDDING_MODEL: "text-embedding-005"
   _EMBEDDING_DIMENSION: "768"
   _EXTRACTION_MODEL: "gemini-2.0-flash"
-  _SECRET_MANAGER_PROJECT: "edgar-ai"
+  _SECRET_MANAGER_PROJECT_ID: "1049830028293"
   _SECRET_NAME: "openai-api-key"
 
 options:
@@ -65,7 +65,7 @@ steps:
       - "--entry-point=req_processor"
       - "--source=/workspace/function-source"
       - "--set-secrets"
-      - "OPENAI_API_KEY=projects/${_SECRET_MANAGER_PROJECT}/secrets/${_SECRET_NAME}:latest"
+      - "OPENAI_API_KEY=projects/${_SECRET_MANAGER_PROJECT_ID}/secrets/${_SECRET_NAME}:latest"
       - "--set-env-vars"
       - "STORAGE_PREFIX=${_STORAGE_PREFIX},TRUSTEE_RESULT_TOPIC=${_TRUSTEE_RESULT_TOPIC},RESPONSE_TOPIC=${_RES_TOPIC},EMBEDDING_MODEL=${_EMBEDDING_MODEL},EMBEDDING_DIMENSION=${_EMBEDDING_DIMENSION},EXTRACTION_MODEL=${_EXTRACTION_MODEL},LOG_LEVEL=${_LOG_LEVEL}"
 
