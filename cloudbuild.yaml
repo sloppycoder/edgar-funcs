@@ -87,6 +87,4 @@ steps:
       - "--entry-point=resp_processor"
       - "--source=/workspace/function-source"
       - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},\"
-      - "REQUEST_TOPIC=${_REQ_TOPIC},\"
-      - "LOG_LEVEL=${_LOG_LEVEL}"
+      - "STORAGE_PREFIX=${_STORAGE_PREFIX},REQUEST_TOPIC=${_REQ_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
