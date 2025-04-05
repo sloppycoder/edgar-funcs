@@ -6,9 +6,9 @@ from typing import Any, Optional, TypedDict
 from ..vectorize import TextChunksWithEmbedding
 from .algo import (
     gather_chunk_distances,
+    nearest_chunks,
     relevance_by_appearance,
     relevance_by_distance,
-    relevant_chunks_with_distances,
     top_adjacent_chunks,
 )
 from .llm import ask_model, remove_md_json_wrapper
@@ -194,9 +194,7 @@ def _find_relevant_text(
     chunks: TextChunksWithEmbedding,
     method: str,
 ):
-    relevance_result = relevant_chunks_with_distances(
-        queries.embeddings, chunks.embeddings, limit=20
-    )
+    relevance_result = nearest_chunks(queries.embeddings, chunks.embeddings, limit=20)
     if not relevance_result:
         return [], ""
 

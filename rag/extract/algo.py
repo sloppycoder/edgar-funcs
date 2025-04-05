@@ -1,4 +1,7 @@
+from rank_bm25 import BM25Okapi
 from scipy.spatial.distance import cosine
+
+from rag.vectorize import TextChunksWithEmbedding
 
 
 def top_adjacent_chunks(relevance_scores) -> list[str]:
@@ -145,13 +148,35 @@ def gather_chunk_distances(results: list[dict]) -> dict:
     return chunk_distances
 
 
-def relevant_chunks_with_distances(
+def nearest_chunks(
     queries: list[list[float]],
     contents: list[list[float]],
-    limit=20,
+    top_k: int,
+    filtered_chunk_nums: list[int] = [],
 ):
+    """
+    Find nearest chunks to query embeddings based on cosine distance.
+
+    Args:
+        queries: List of query embedding vectors
+        contents: List of content embedding vectors
+        top_k: Number of top results to return
+        filtered_indices: Optional list of indices to restrict the search to.
+                          If provided, only these indices from contents will be used.
+                          This allows pre-filtering using methods like BM25.
+
+    Returns:
+        List of dictionaries with query_idx, chunk_num, and distance
+    """
     distances = []
-    for chunk_num, content_vec in enumerate(contents):
+
+    # If filtered_indices is empty, process all contents
+    indices_to_process = (
+        range(len(contents)) if not filtered_chunk_nums else filtered_chunk_nums
+    )
+
+    for chunk_num in indices_to_process:
+        content_vec = contents[chunk_num]
         for query_idx, query_vec in enumerate(queries):
             distance = float(cosine(query_vec, content_vec))
             distances.append(
@@ -161,5 +186,56 @@ def relevant_chunks_with_distances(
                     "distance": distance,
                 }
             )
+
     distances.sort(key=lambda x: x["distance"])
-    return distances[:limit]
+    return distances[:top_k]
+
+
+def preprocess_text(text: str) -> list[str]:
+    """
+    Preprocess text for BM25 tokenization, with special handling for dollar amounts.
+    This helps match dollar ranges regardless of formatting.
+    """
+    # Basic lowercase and split
+    tokens = text.lower().split()
+    
+    # Process tokens to handle dollar amounts
+    processed_tokens = []
+    for token in tokens:
+        # Keep original token
+        processed_tokens.append(token)
+        
+        # Handle dollar signs and commas in numbers
+        if '$' in token or ',' in token:
+            # Remove $ and commas from numbers
+            stripped = token.replace('$', '').replace(',', '')
+            if stripped.isdigit() or (stripped.replace('-', '').isdigit() and '-' in stripped):
+                processed_tokens.append(stripped)
+    
+    return processed_tokens
+
+
+def filter_chunks_with_keywords(
+    chunks: TextChunksWithEmbedding,
+    keywords: list[str],
+    top_k: int,
+) -> list[int]:
+    """
+    Filter chunks using BM25 algorithm based on keywords.
+    Returns the indices of the top k chunks.
+    Handles special cases like dollar amounts with or without $ signs.
+    """
+    corpus = chunks.texts
+    # Use custom tokenization that handles dollar amounts
+    tokenized_corpus = [preprocess_text(doc) for doc in corpus]
+    bm25 = BM25Okapi(tokenized_corpus)
+
+    # Preprocess the keywords with the same function
+    tokenized_query = preprocess_text(" ".join(keywords))
+    bm25_scores = bm25.get_scores(tokenized_query)
+
+    # Get indices of top k chunks by BM25 score
+    top_indices = sorted(
+        range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True
+    )[:top_k]
+    return top_indices

@@ -65,9 +65,6 @@ class TextChunksWithEmbedding:
         if not self.texts:
             raise ValueError("texts cannot be empty")
 
-        if model == OPENAI_EMBEDDING_MODEL:
-            dimension = 1536
-
         start_t = datetime.now()
         self.embeddings = batch_embedding(self.texts, model=model, dimension=dimension)
         elapsed_t = datetime.now() - start_t
