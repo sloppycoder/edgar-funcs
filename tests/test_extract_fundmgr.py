@@ -9,23 +9,24 @@ from tests.utils import mock_file_content
 embedding_model, embedding_dimension, extraction_model = (
     "text-embedding-3-small",
     1536,
-    "gemini-1.5-flash-002",
+    "gemini-2.0-flash",
 )
 
 
 def test_extract_fundmgr_ownership():
+    cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "4"
+    # cik, accession_number, chunk_algo_version = "19034", "0001104659-24-051926", "4"
+
+    # uncomment the following if test data does not exist
+    # _prep_filing(cik, accession_number, chunk_algo_version)
+
+    mock_response = (
+        f"response/{extraction_model}/{cik}/{accession_number}_fundmgr_ownership.txt"
+    )
     with patch(
         "rag.extract.fundmgr.ask_model",
-        return_value=mock_file_content(
-            "response/gemini-1.5-flash-002/1002427/0001133228-24-004879_fundmgr_ownership.txt"
-        ),
+        return_value=mock_file_content(mock_response),
     ):
-        # cik, accession_number, chunk_algo_version = "19034", "0001104659-24-051926", "4"
-        cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "4"
-
-        # uncomment the following if test data does not exist
-        # _prep_filing(cik, accession_number, chunk_algo_version)
-
         result = extract_fundmgr_ownership_from_filing(
             cik=cik,
             accession_number=accession_number,

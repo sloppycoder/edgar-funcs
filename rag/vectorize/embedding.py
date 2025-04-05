@@ -17,7 +17,7 @@ _OPENAI_EMBEDDING_MODELS = [
 ]
 _GEMINI_EMBEDDING_MODELS = [
     "text-embedding-005",
-    "gecko",
+    "textembedding-gecko@002",
 ]
 
 
