@@ -37,7 +37,7 @@ def req_processor(cloud_event: CloudEvent) -> None:
 
             publish_response(data, True, "success")
 
-        elif action == "extract_trustee_comp":  # , "extract_fundmgr_ownership"]:
+        elif action == "extract_trustee_comp":
             result = extract_trustee_comp_from_filing(**data)
             if result:
                 logger.info(
@@ -52,7 +52,7 @@ def req_processor(cloud_event: CloudEvent) -> None:
             result = extract_fundmgr_ownership_from_filing(**data)
             if result:
                 logger.info(
-                    f"extraction with {data} found {len(result['ownership_info']['managers'])} trustees"  # noqa E501
+                    f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
                 )
                 _publish_result(data, dict(result))
                 publish_response(data, True, "result published")
@@ -66,7 +66,7 @@ def req_processor(cloud_event: CloudEvent) -> None:
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
-        logger.info(f"chunking with {data} failed with {error_msg}\n{tb}")
+        logger.error(f"chunking with {data} failed with {error_msg}\n{tb}")
 
         publish_response(data, False, error_msg)
 
@@ -101,7 +101,7 @@ def _publish_result(data: dict, result: dict):
         "selected_text": result.get("selected_text", ""),
         "response": result.get("response", ""),
         "notes": result.get("notes", ""),
-        "model": data["extraction_model"],
+        "model": data["model"],
         "extraction_type": data.get("run_extract", ""),
     }
 
