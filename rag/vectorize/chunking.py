@@ -13,9 +13,11 @@ logger = logging.getLogger(__name__)
 # the chunked text and their embeddings are store in pickle file for faster load
 # update the chunking detail without version update can have unpredictable results
 # when older and potentially obselete pickle files are loaded
-CHUNK_ALORITHM_VERSION = "3"
+CHUNK_ALORITHM_VERSION = "4"
 
-DEFAULT_TEXT_CHUNK_SIZE = 3500
+DEFAULT_TEXT_CHUNK_SIZE = 1000
+
+# version 3 uses chunk size of 3500
 
 
 def chunk_text(
