@@ -37,7 +37,7 @@ def request_for_chunking(
         "chunk_algo_version": "4",
     }
     publish_request(data)
-    print("request_for_chunking: action={action}, batch_id={batch_id}")
+    print(f"request_for_chunking: action={action}, batch_id={batch_id}")
     return data
 
 
@@ -66,7 +66,7 @@ def request_for_extract(
         "chunk_algo_version": "4",
     }
     publish_request(data)
-    print("request_for_extract: action={action}, batch_id={batch_id}")
+    print(f"request_for_extract: action={action}, batch_id={batch_id}")
     return data
 
 
@@ -206,8 +206,7 @@ def parse_cli():
         type=str,
         choices=[
             "chunk",
-            "extract-trustee-comp",
-            "extract-fundmgr-ownership",
+            "extract",
             "publish-test-result",
             "sample",
             "export",
@@ -227,6 +226,15 @@ def parse_cli():
         nargs="?",
         default=None,
         help="Accession Number of the filing",
+    )
+    parser.add_argument(
+        "extract_type",
+        type=str,
+        choices=[
+            "trustee",
+            "fundmgr",
+        ],
+        help="Extraction type",
     )
     parser.add_argument(
         "--dryrun",
@@ -310,7 +318,7 @@ def main():
             embedding_model=args.embedding_model,
             embedding_dimension=args.embedding_dimension,
             extraction_model=args.extraction_model,
-            extraction_type="trustee" if args.cik else "fundmgr_ownership",  # noqa E501
+            extraction_type=args.extract_type,
         )
     elif args.command == "publish-test-result":
         send_test_extraction_result()
