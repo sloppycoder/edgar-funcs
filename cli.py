@@ -1,6 +1,7 @@
 import argparse
 import gzip
 import json
+import os
 import random
 import string
 from datetime import datetime
@@ -9,8 +10,8 @@ import pandas as pd
 from google.cloud import bigquery
 
 from func_helpers import (
+    publish_message,
     publish_request,
-    publish_response,
 )
 
 
@@ -65,7 +66,8 @@ def request_for_extract(
 
 
 def send_test_extraction_result():
-    data = {
+    extraction_result = {
+        "batch_id": _batch_id(),
         "cik": "1",
         "accession_number": "1",
         "date_filed": "2022-12-01",
@@ -76,7 +78,7 @@ def send_test_extraction_result():
         "model": "gemini-flash-2.0",
         "extraction_type": "trustee_comp",
     }
-    publish_response(params=data, is_success=True, msg="Test response")
+    publish_message(extraction_result, os.environ.get("EXTRACTION_RESULT_TOPIC", ""))
 
 
 def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage: int):
