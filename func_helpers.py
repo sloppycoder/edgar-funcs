@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from functools import lru_cache
 from typing import Any
 
 import google.auth  # Add this import
@@ -14,6 +15,17 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
+@lru_cache(maxsize=1)
+def create_publisher():
+    credentials = google_cloud_credentials(
+        scopes=["https://www.googleapis.com/auth/pubsub"]
+    )
+    if credentials:
+        return pubsub_v1.PublisherClient(credentials=credentials)
+    else:
+        return pubsub_v1.PublisherClient()  # Use default credentials
+
+
 def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials | None:
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if credentials_path and os.path.isfile(credentials_path):
@@ -22,23 +34,6 @@ def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials |
         )
     else:
         return None
-
-
-def model_settings():
-    extraction_model = os.environ.get("EXTRACTION_MODEL")
-    if not extraction_model:
-        raise RuntimeError("EXTRACTION_MODEL not set")
-
-    embedding_model = os.environ.get("EMBEDDING_MODEL")
-    if not embedding_model:
-        raise RuntimeError("EMBEDDING_MODEL not set")
-
-    dimension = os.environ.get("EMBEDDING_DIMENSION", "0")
-    try:
-        embedding_dimension = int(dimension)
-        return embedding_model, embedding_dimension, extraction_model
-    except ValueError:
-        raise RuntimeError("EMBEDDING_DIMENSION must be set to a integer value")
 
 
 def setup_cloud_logging():
@@ -64,14 +59,7 @@ def get_default_project_id():
 def publish_message(message: dict, topic_name: str):
     gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
-        credentials = google_cloud_credentials(
-            scopes=["https://www.googleapis.com/auth/pubsub"]
-        )
-        if credentials:
-            publisher = pubsub_v1.PublisherClient(credentials=credentials)
-        else:
-            publisher = pubsub_v1.PublisherClient()  # Use default credentials
-
+        publisher = create_publisher()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
         content = json.dumps(message).encode("utf-8")

@@ -9,9 +9,8 @@ import pandas as pd
 from google.cloud import bigquery
 
 from func_helpers import (
-    model_settings,
-    publish_message,
     publish_request,
+    publish_response,
 )
 
 
@@ -19,9 +18,11 @@ def request_for_chunking(
     batch_id: str,
     cik: str,
     accession_number: str,
-    run_extract: bool = False,
+    embedding_model: str,
+    embedding_dimension: int,
+    extraction_model: str,
+    run_extract: str = "",
 ):
-    embedding_model, embedding_dimension, extraction_model = model_settings()
     data = {
         "batch_id": batch_id,
         "action": "chunk_one_filing",
@@ -36,11 +37,23 @@ def request_for_chunking(
     return data
 
 
-def request_for_extract(batch_id, cik: str, accession_number: str):
-    embedding_model, embedding_dimension, extraction_model = model_settings()
+def request_for_extract(
+    extraction_type: str,
+    batch_id,
+    cik: str,
+    accession_number: str,
+    embedding_model: str,
+    embedding_dimension: int,
+    extraction_model: str,
+):
+    action = (
+        "extract_trustee_comp"
+        if extraction_type == "trustee"
+        else "extract_fundmgr_ownership"
+    )
     data = {
         "batch_id": batch_id,
-        "action": "extract_one_filing",
+        "action": action,
         "cik": cik,
         "accession_number": accession_number,
         "embedding_model": embedding_model,
@@ -51,35 +64,19 @@ def request_for_extract(batch_id, cik: str, accession_number: str):
     return data
 
 
-def send_test_trustee_comp_result():
+def send_test_extraction_result():
     data = {
         "cik": "1",
         "accession_number": "1",
         "date_filed": "2022-12-01",
         "selected_chunks": [123, 456],
         "selected_text": "some_text",
-        "response": "some_response",
-        "n_trustee": 10,
-        "comp_info": {
-            "compensation_info_present": True,
-            "trustees": [
-                {
-                    "year": "2022",
-                    "name": "stuff_name_1",
-                    "job_title": "title",
-                    "compensation": "1000",
-                },
-                {
-                    "year": "2022",
-                    "name": "stuff_name_2",
-                    "job_title": "title_stuff",
-                    "compensation": "100",
-                },
-            ],
-            "notes": "some_notes",
-        },
+        "response": "{}",
+        "notes": "some_notes",
+        "model": "gemini-flash-2.0",
+        "extraction_type": "trustee_comp",
     }
-    publish_message(data, "edgarai-trustee-result")
+    publish_response(params=data, is_success=True, msg="Test response")
 
 
 def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage: int):
@@ -94,10 +91,18 @@ def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage:
         f.write("batch_id,cik,accession_number\n")
         for idx, row in df_sample.iterrows():
             cik = str(row["cik"])
-            accession_number = row["accession_number"]
+            accession_number = str(row["accession_number"])
             f.write(f"{batch_id},{cik},{accession_number}\n")
             if not dryrun:
-                request_for_chunking(batch_id, cik, accession_number, run_extract=True)
+                request_for_chunking(
+                    batch_id=batch_id,
+                    cik=cik,
+                    accession_number=accession_number,
+                    embedding_model="text-embedding-005",
+                    embedding_dimension=768,
+                    extraction_model="gemini-flash-2.0",
+                    run_extract="fundmgr",
+                )
 
             n_processed += 1
 
@@ -157,7 +162,7 @@ def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
     df_filtered = df_filings[
         (df_filings["date_filed"] > start_date) & (df_filings["date_filed"] < end_date)
     ]
-    df_result = pd.merge(df_filtered, df_cik, on="cik")
+    df_result = pd.merge(df_filtered, df_cik, on="cik")  # pyright: ignore
     df_result["cik"] = df_result["cik"].astype(str)
     return df_result
 
@@ -192,7 +197,14 @@ def parse_cli():
     parser.add_argument(
         "command",
         type=str,
-        choices=["chunk", "extract", "test", "sample", "export"],
+        choices=[
+            "chunk",
+            "extract-trustee-comp",
+            "extract-fundmgr-ownership",
+            "publish-test-result",
+            "sample",
+            "export",
+        ],
         help="Command to execute: chunk, extract, trustee, sample, or export",
     )
     parser.add_argument(
@@ -249,18 +261,52 @@ def parse_cli():
         default="2024-12-31",
         help="End date in YYYY-MM-DD format (default: 2024-01-01)",
     )
+    parser.add_argument(
+        "--embedding-dimension",
+        type=int,
+        default=768,
+        help="Embedding vector dimension, typically 768 for Gemini models and 1536 for OpenAI models ",  # noqa E501
+    )
+    parser.add_argument(
+        "--embedding-model",
+        type=str,
+        default="text-embedding-005",
+        help="Model to use for embedding (default: text-embedding-005)",
+    )
+    parser.add_argument(
+        "--extraction-model",
+        type=str,
+        default="gemini-flash-2.0",
+        help="Model to use for extraction (default: gemini-flash-2.0)",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_cli()
 
+    batch_id = _batch_id()
     if args.command == "chunk":
-        request_for_chunking(_batch_id(), args.cik, args.accession_number)
+        request_for_chunking(
+            batch_id=batch_id,
+            cik=args.cik,
+            accession_number=args.accession_number,
+            embedding_model=args.embedding_model,
+            embedding_dimension=args.embedding_dimension,
+            extraction_model=args.extraction_model,
+        )
     elif args.command == "extract":
-        request_for_extract(_batch_id(), args.cik, args.accession_number)
-    elif args.command == "test":
-        send_test_trustee_comp_result()
+        request_for_extract(
+            batch_id=batch_id,
+            cik=args.cik,
+            accession_number=args.accession_number,
+            embedding_model=args.embedding_model,
+            embedding_dimension=args.embedding_dimension,
+            extraction_model=args.extraction_model,
+            extraction_type="trustee" if args.cik else "fundmgr_ownership",  # noqa E501
+        )
+    elif args.command == "publish-test-result":
+        send_test_extraction_result()
     elif args.command == "sample":
         output_file = args.output if args.output else "tmp/processed.csv.gz"
         sample_catalog_and_send_requests(output_file, args.dryrun, args.percentage)

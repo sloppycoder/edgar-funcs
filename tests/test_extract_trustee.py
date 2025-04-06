@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
-from func_helpers import model_settings
 from rag.extract.trustee import extract_trustee_comp_from_filing
 from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content
 
-embedding_model, embedding_dimension, extraction_model = model_settings()
+embedding_model, embedding_dimension = "text-embedding-005", 768
+extraction_model = "gemini-1.5-flash-002"
 
 
 def test_extract_html_filing():

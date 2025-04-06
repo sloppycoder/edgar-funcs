@@ -3,7 +3,6 @@ from unittest.mock import patch
 import pytest
 
 from edgar import SECFiling
-from func_helpers import model_settings
 from rag.vectorize import (
     TextChunksWithEmbedding,
     _storage_prefix,
@@ -12,7 +11,7 @@ from rag.vectorize import (
 from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content, mock_json_dict
 
-embedding_model, embedding_dimension, _ = model_settings()
+embedding_model, embedding_dimension = "text-embedding-005", 768
 
 
 def test_one_filing_chunk_save_load():
