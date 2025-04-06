@@ -5,7 +5,7 @@ substitutions:
   _REQ_TOPIC: "edgarai-request"
   _RES_TOPIC: "edgarai-response"
   _EXTRACTION_RESULT_TOPIC: "edgarai-extraction-result"
-  _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs/chunks"
+  _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
   _OPENAI_API_KEY_SECRET: "projects/1049830028293/secrets/openai-api-key:latest"
