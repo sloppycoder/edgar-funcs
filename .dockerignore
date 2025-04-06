@@ -7,4 +7,5 @@
 !requirements*.txt
 !*.py
 !migrations/
-!edgar_funcs
+!rag
+cli.py
