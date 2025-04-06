@@ -88,7 +88,9 @@ google-cloud-appengine-logging==1.6.1
 google-cloud-audit-log==0.3.2
     # via google-cloud-logging
 google-cloud-bigquery==3.30.0
-    # via google-cloud-aiplatform
+    # via
+    #   edgar-funcs (pyproject.toml)
+    #   google-cloud-aiplatform
 google-cloud-core==2.4.3
     # via
     #   google-cloud-bigquery
@@ -179,6 +181,8 @@ murmurhash==1.0.12
 numpy==2.2.4
     # via
     #   blis
+    #   pandas
+    #   rank-bm25
     #   scipy
     #   shapely
     #   spacy
@@ -204,6 +208,8 @@ packaging==24.2
     #   spacy
     #   thinc
     #   weasel
+pandas==2.2.3
+    # via edgar-funcs (pyproject.toml)
 preshed==3.0.9
     # via
     #   spacy
@@ -247,9 +253,17 @@ pydantic-core==2.27.2
     # via pydantic
 pygments==2.19.1
     # via rich
+pympler==1.1
+    # via edgar-funcs (pyproject.toml)
 python-dateutil==2.9.0.post0
-    # via google-cloud-bigquery
+    # via
+    #   google-cloud-bigquery
+    #   pandas
 python-dotenv==1.0.1
+    # via edgar-funcs (pyproject.toml)
+pytz==2025.2
+    # via pandas
+rank-bm25==0.2.2
     # via edgar-funcs (pyproject.toml)
 regex==2024.11.6
     # via tiktoken
@@ -323,6 +337,8 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   typer
+tzdata==2025.2
+    # via pandas
 urllib3==2.3.0
     # via requests
 wasabi==1.1.3
