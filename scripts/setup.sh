@@ -1,12 +1,12 @@
 #!/bin/bash
 
 PPOJECT_ID=edgar-ai
-RESULT_TOPIC=edgarai-trustee-result
+RESULT_TOPIC=edgarai-extraction-result
 DLQ_TOPIC=${RESULT_TOPIC}-dlq
-RESULT_TABLE=edgar2.trustee_comp_result
+RESULT_TABLE=edgar2.extraction_result
 
 bq rm -f -t ${PPOJECT_ID}:${RESULT_TABLE}
-bq mk --table --schema trustee_comp_result_schema.json ${PPOJECT_ID}:${RESULT_TABLE}
+bq mk --table --schema extraction_result_schema.json ${PPOJECT_ID}:${RESULT_TABLE}
 
 gcloud pubsub topics list --filter="name:$RESULT_TOPIC" --format="value(name)" | grep -q "$RESULT_TOPIC$"
 if [ $? -ne 0 ]; then
@@ -26,8 +26,8 @@ else
   echo "Topic '$DLQ_TOPIC' already exists."
 fi
 
-gcloud pubsub subscriptions delete trustee-result-sub
-gcloud pubsub subscriptions create trustee-result-sub \
+gcloud pubsub subscriptions delete extraction-result-sub
+gcloud pubsub subscriptions create extraction-result-sub \
     --topic $RESULT_TOPIC \
     --bigquery-table ${PPOJECT_ID}:$RESULT_TABLE \
     --use-table-schema --drop-unknown-fields \
@@ -35,8 +35,8 @@ gcloud pubsub subscriptions create trustee-result-sub \
     --dead-letter-topic $DLQ_TOPIC \
     --max-delivery-attempts 5
 
-gcloud pubsub subscriptions delete trustee-result-dlq-sub
-gcloud pubsub subscriptions create trustee-result-dlq-sub \
+gcloud pubsub subscriptions delete extraction-result-dlq-sub
+gcloud pubsub subscriptions create extraction-result-dlq-sub \
   --topic $DLQ_TOPIC
 
 gcloud pubsub subscriptions list

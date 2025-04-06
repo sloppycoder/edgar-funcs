@@ -20,6 +20,16 @@
         "mode": "REQUIRED"
     },
     {
+        "name": "extraction_type",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "model",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
         "name": "selected_chunks",
         "type": "INTEGER",
         "mode": "REPEATED"
@@ -33,27 +43,5 @@
         "name": "response",
         "type": "STRING",
         "mode": "NULLABLE"
-    },
-    {
-        "name": "n_trustee",
-        "type": "INTEGER",
-        "mode": "REQUIRED"
-    },
-    {
-        "name": "comp_info",
-        "type": "RECORD",
-        "mode": "NULLABLE",
-        "fields": [
-            {
-                "name": "compensation_info_present",
-                "type": "BOOLEAN",
-                "mode": "NULLABLE"
-            },
-            {
-                "name": "notes",
-                "type": "STRING",
-                "mode": "NULLABLE"
-            }
-        ]
     }
 ]
