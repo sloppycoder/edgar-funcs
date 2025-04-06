@@ -80,8 +80,13 @@ def resp_processor(cloud_event: CloudEvent):
 
     if action == "chunk_one_filing":
         req_is_success = data["success"]
-        if req_is_success and params.get("run_extract"):
-            params["action"] = params.get("run_extract")
+        extract_type = params.get("run_extract")
+        if req_is_success and extract_type:
+            params["action"] = (
+                "extract_trustee_comp"
+                if "trustee" in extract_type
+                else "extract_fundmgr_ownership"
+            )
             publish_request(params)
             logger.info(f"publish request for {params}")
 
