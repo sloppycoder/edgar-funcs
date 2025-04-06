@@ -186,6 +186,7 @@ def chunk_filing_and_save_embedding(
             "cik": filing.cik,
             "accession_number": filing.accession_number,
             "date_filed": filing.date_filed,
+            "chunk_algo_version": chunk_algo_version,
         }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
