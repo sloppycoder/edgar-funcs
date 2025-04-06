@@ -13,6 +13,7 @@ from func_helpers import (
     publish_response,
     setup_cloud_logging,
 )
+from rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from rag.extract.trustee import extract_trustee_comp_from_filing
 from rag.vectorize import chunk_filing_and_save_embedding
 
@@ -36,27 +37,31 @@ def req_processor(cloud_event: CloudEvent) -> None:
 
             publish_response(data, True, "success")
 
-        elif action == "extract_one_filing":
+        elif action == "extract_trustee_comp":  # , "extract_fundmgr_ownership"]:
             result = extract_trustee_comp_from_filing(**data)
             if result:
                 logger.info(
                     f"extraction with {data} found {result['n_trustee']} trustees"
                 )
+                _publish_result(data, dict(result))
+                publish_response(data, True, "result published")
+            else:
+                publish_response(data, False, "no info extracted")
 
-                result_topic = os.environ.get("TRUSTEE_RESULT_TOPIC")
-                if result_topic:
-                    result_message = dict(result)
-                    result_message["batch_id"] = data["batch_id"]
-                    publish_message(result_message, result_topic)
-                    message = f"result published to {result_topic}"
-                else:
-                    message = "result discarded"
-
-                logger.info(message)
-                publish_response(data, True, message)
+        elif action == "extract_fundmgr_ownership":
+            result = extract_fundmgr_ownership_from_filing(**data)
+            if result:
+                logger.info(
+                    f"extraction with {data} found {len(result['ownership_info']['managers'])} trustees"  # noqa E501
+                )
+                _publish_result(data, dict(result))
+                publish_response(data, True, "result published")
+            else:
+                publish_response(data, False, "no info extracted")
 
         else:
             logger.info(f"Unknown action {action}")
+            return
 
     except Exception as e:
         error_msg = str(e)
@@ -75,10 +80,40 @@ def resp_processor(cloud_event: CloudEvent):
 
     if action == "chunk_one_filing":
         req_is_success = data["success"]
-        if req_is_success and params.get("run_extract", False):
-            params["action"] = "extract_one_filing"
+        if req_is_success and params.get("run_extract"):
+            params["action"] = params.get("run_extract")
             publish_request(params)
             logger.info(f"publish request for {params}")
+
+
+def _publish_result(data: dict, result: dict):
+    if not result:
+        logger.info(f"No data extracted for {data}")
+        publish_response(data, False, "info not found")
+        return
+
+    extraction_result = {
+        "batch_id": data.get("batch_id", ""),
+        "cik": result.get("cik", ""),
+        "accession_number": result.get("accession_number", ""),
+        "date_filed": result.get("date_filed", ""),
+        "selected_chunks": result.get("selected_chunks", []),
+        "selected_text": result.get("selected_text", ""),
+        "response": result.get("response", ""),
+        "notes": result.get("notes", ""),
+        "model": data["extraction_model"],
+        "extraction_type": data.get("run_extract", ""),
+    }
+
+    result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
+    if result_topic:
+        publish_message(extraction_result, result_topic)
+        message = f"result published to {result_topic}"
+    else:
+        message = "result discarded"
+
+    logger.info(message)
+    publish_response(data, True, message)
 
 
 if __name__ == "__main__":
