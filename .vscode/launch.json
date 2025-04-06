@@ -12,8 +12,12 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "export",
-                "--input=tmp/processed_2009.csv"
+                "--embedding-model=text-embedding-3-small",
+                "--embedding-dimension=1536",
+                "--extraction-model=gemini-2.0-flash",
+                "chunk",
+                "1002427",
+                "0001133228-24-004879",
             ]
         },
         {

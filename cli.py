@@ -24,17 +24,20 @@ def request_for_chunking(
     extraction_model: str,
     run_extract: str = "",
 ):
+    action = "chunk_one_filing"
     data = {
         "batch_id": batch_id,
-        "action": "chunk_one_filing",
+        "action": action,
         "cik": cik,
         "accession_number": accession_number,
         "embedding_model": embedding_model,
         "embedding_dimension": embedding_dimension,
         "model": extraction_model,
         "run_extract": run_extract,
+        "chunk_algo_version": "4",
     }
     publish_request(data)
+    print("request_for_chunking: action={action}, batch_id={batch_id}")
     return data
 
 
@@ -60,8 +63,10 @@ def request_for_extract(
         "embedding_model": embedding_model,
         "embedding_dimension": embedding_dimension,
         "model": extraction_model,
+        "chunk_algo_version": "4",
     }
     publish_request(data)
+    print("request_for_extract: action={action}, batch_id={batch_id}")
     return data
 
 
