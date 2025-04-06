@@ -13,10 +13,15 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-scopes = ["https://www.googleapis.com/auth/pubsub"]
-credentials = service_account.Credentials.from_service_account_file(
-    os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), scopes=scopes
-)
+
+def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials | None:
+    credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if credentials_path and os.path.isfile(credentials_path):
+        return service_account.Credentials.from_service_account_file(
+            credentials_path, scopes=scopes
+        )
+    else:
+        return None
 
 
 def model_settings():
@@ -59,7 +64,14 @@ def get_default_project_id():
 def publish_message(message: dict, topic_name: str):
     gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
-        publisher = pubsub_v1.PublisherClient(credentials=credentials)
+        credentials = google_cloud_credentials(
+            scopes=["https://www.googleapis.com/auth/pubsub"]
+        )
+        if credentials:
+            publisher = pubsub_v1.PublisherClient(credentials=credentials)
+        else:
+            publisher = pubsub_v1.PublisherClient()  # Use default credentials
+
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
         content = json.dumps(message).encode("utf-8")
