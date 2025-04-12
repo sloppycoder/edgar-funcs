@@ -43,7 +43,10 @@ def req_processor(cloud_event: CloudEvent) -> None:
                 logger.info(
                     f"extraction with {data} found {result['n_trustee']} trustees"
                 )
-                _publish_result(data, dict(result))
+                pub_data = dict(result)
+                pub_data["company_name"] = data["company_name"]
+                _publish_result(data, pub_data)
+
                 publish_response(data, True, "result published")
             else:
                 publish_response(data, False, "no info extracted")
@@ -54,7 +57,10 @@ def req_processor(cloud_event: CloudEvent) -> None:
                 logger.info(
                     f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
                 )
-                _publish_result(data, dict(result))
+                pub_data = dict(result)
+                pub_data["company_name"] = data["company_name"]
+                _publish_result(data, pub_data)
+
                 publish_response(data, True, "result published")
             else:
                 publish_response(data, False, "no info extracted")
