@@ -1,13 +1,10 @@
 import argparse
-import gzip
-import json
 import os
 import random
 import string
 from datetime import datetime
 
 import pandas as pd
-from google.cloud import bigquery
 
 from func_helpers import (
     publish_message,
@@ -18,6 +15,7 @@ from func_helpers import (
 def request_for_chunking(
     batch_id: str,
     cik: str,
+    company_name: str,
     accession_number: str,
     embedding_model: str,
     embedding_dimension: int,
@@ -29,6 +27,7 @@ def request_for_chunking(
         "batch_id": batch_id,
         "action": action,
         "cik": cik,
+        "company_name": company_name,
         "accession_number": accession_number,
         "embedding_model": embedding_model,
         "embedding_dimension": embedding_dimension,
@@ -45,6 +44,7 @@ def request_for_extract(
     extraction_type: str,
     batch_id,
     cik: str,
+    company_name: str,
     accession_number: str,
     embedding_model: str,
     embedding_dimension: int,
@@ -59,6 +59,7 @@ def request_for_extract(
         "batch_id": batch_id,
         "action": action,
         "cik": cik,
+        "company_name": company_name,
         "accession_number": accession_number,
         "embedding_model": embedding_model,
         "embedding_dimension": embedding_dimension,
@@ -74,6 +75,7 @@ def send_test_extraction_result():
     extraction_result = {
         "batch_id": _batch_id(),
         "cik": "1",
+        "company_name": "some_company",
         "accession_number": "1",
         "date_filed": "2022-12-01",
         "selected_chunks": [123, 456],
@@ -87,27 +89,29 @@ def send_test_extraction_result():
 
 
 def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage: int):
-    df_filings = _get_filings_by_range("2004-01-01", "2004-12-31")
+    df_filings = _get_filings_by_range("2023-01-01", "2024-12-31")
 
     batch_id = _batch_id()
     n_total, n_processed = len(df_filings), 0
 
     df_sample = df_filings.sample(frac=float(percentage) / 100)
 
-    with gzip.open(output_file, "wt") as f:
-        f.write("batch_id,cik,accession_number\n")
+    with open(output_file, "w") as f:
+        f.write("batch_id,cik,company_name,accession_number\n")
         for idx, row in df_sample.iterrows():
             cik = str(row["cik"])
             accession_number = str(row["accession_number"])
-            f.write(f"{batch_id},{cik},{accession_number}\n")
+            company_name = row["company_name"].strip()  # pyright: ignore
+            f.write(f"{batch_id},{cik},{company_name},{accession_number}\n")
             if not dryrun:
                 request_for_chunking(
                     batch_id=batch_id,
                     cik=cik,
+                    company_name=company_name,
                     accession_number=accession_number,
-                    embedding_model="text-embedding-005",
-                    embedding_dimension=768,
-                    extraction_model="gemini-flash-2.0",
+                    embedding_model="text-embedding-3-small",
+                    embedding_dimension=1536,
+                    extraction_model="gemini-2.0-flash",
                     run_extract="fundmgr",
                 )
 
@@ -116,41 +120,6 @@ def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage:
     print(
         f"Requested {n_processed} filings out of {n_total}, list saved to {output_file}"
     )
-
-
-def export_process_result(input_file: str, output_file: str):
-    df_processed = pd.read_csv(input_file)
-    df_processed["cik"] = df_processed["cik"].astype(str)
-    assert len(df_processed) > 0, "No processed data found in the input file"
-
-    batch_id = df_processed["batch_id"].iloc[0]
-    df_result = pd.DataFrame(_query_result(batch_id))
-
-    # Perform a left join with df_procesed on the left side
-    df_merged = pd.merge(
-        df_processed, df_result, on=["cik", "accession_number"], how="left"
-    )
-
-    df_filings = _get_filings_by_range("2000-01-01", "2024-12-31")
-    # Add company_name column by looking up from df_filings
-    df_merged = pd.merge(
-        df_merged,
-        df_filings[["cik", "accession_number", "company_name"]],
-        on=["cik", "accession_number"],
-        how="left",
-    )
-
-    # Ensure num_trustees column is set to 0 if NaN
-    df_merged["num_trustees"] = df_merged["num_trustees"].fillna(0)
-
-    # Write each row as a JSON object to the output file in JSONL format
-    n_count = 0
-    with gzip.open(output_file, "wt") as f:
-        for _, row in df_merged.iterrows():
-            row_dict = row.to_dict()
-            n_count += 1
-            f.write(json.dumps(row_dict) + "\n")
-    print(f"Exported {n_count} records to {output_file}")
 
 
 def _batch_id() -> str:
@@ -174,31 +143,6 @@ def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
     return df_result
 
 
-def _query_result(batch_id: str) -> list[dict]:
-    """
-    Query BigQuery table edgar2.trustee_comp_result to
-    get the results for a specific batch_id.
-    """
-    client = bigquery.Client()
-    query = """
-        SELECT
-            cik, accession_number, date_filed,
-            selected_chunks as chunks_used,
-            selected_text as relevant_text,
-            n_trustee as num_trustees,
-            response trustees_comp
-        FROM `edgar2.trustee_comp_result`
-        WHERE batch_id = @batch_id
-    """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("batch_id", "STRING", batch_id),
-        ]
-    )
-    query_job = client.query(query, job_config=job_config)
-    return [dict(row) for row in query_job.result()]
-
-
 def parse_cli():
     parser = argparse.ArgumentParser(description="CLI for EDGAR functions")
     parser.add_argument(
@@ -209,9 +153,8 @@ def parse_cli():
             "extract",
             "publish-test-result",
             "sample",
-            "export",
         ],
-        help="Command to execute: chunk, extract, trustee, sample, or export",
+        help="Command to execute: chunk, extract, trustee or sample",
     )
     parser.add_argument(
         "cik",
@@ -245,8 +188,8 @@ def parse_cli():
     parser.add_argument(
         "--percentage",
         type=int,
-        default=20,
-        help="Percentage of filings to process (default: 20)",
+        default=1,
+        help="Percentage of filings to process (default: 10)",
     )
     parser.add_argument(
         "-i",
@@ -305,6 +248,7 @@ def main():
         request_for_chunking(
             batch_id=batch_id,
             cik=args.cik,
+            company_name=f"Manual trigger {args.cik}",
             accession_number=args.accession_number,
             embedding_model=args.embedding_model,
             embedding_dimension=args.embedding_dimension,
@@ -314,6 +258,7 @@ def main():
         request_for_extract(
             batch_id=batch_id,
             cik=args.cik,
+            company_name=f"Manual trigger {args.cik}",
             accession_number=args.accession_number,
             embedding_model=args.embedding_model,
             embedding_dimension=args.embedding_dimension,
@@ -323,12 +268,8 @@ def main():
     elif args.command == "publish-test-result":
         send_test_extraction_result()
     elif args.command == "sample":
-        output_file = args.output if args.output else "tmp/processed.csv.gz"
+        output_file = args.output if args.output else "tmp/sampled.csv"
         sample_catalog_and_send_requests(output_file, args.dryrun, args.percentage)
-    elif args.command == "export":
-        input_file = args.input if args.input else "tmp/processed.csv"
-        output_file = args.output if args.output else "tmp/seed_data.jsonl.gz"
-        export_process_result(input_file, output_file)
     else:
         print("Unknown command")
 

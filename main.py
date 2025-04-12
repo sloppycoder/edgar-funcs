@@ -100,6 +100,7 @@ def _publish_result(data: dict, result: dict):
     extraction_result = {
         "batch_id": data.get("batch_id", ""),
         "cik": result.get("cik", ""),
+        "company_name": result.get("company_name", ""),
         "accession_number": result.get("accession_number", ""),
         "date_filed": result.get("date_filed", ""),
         "selected_chunks": result.get("selected_chunks", []),
