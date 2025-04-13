@@ -5,20 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "cli.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
                 "--embedding-model=text-embedding-3-small",
                 "--embedding-dimension=1536",
                 "--extraction-model=gemini-2.0-flash",
-                "sample",
-                // "1002427",
-                // "0001133228-24-004879",
                 "trustee",
+                "0001224568-24-000005",
             ]
         },
         {

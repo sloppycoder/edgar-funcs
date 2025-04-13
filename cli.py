@@ -1,13 +1,14 @@
 import argparse
-import os
 import random
+import re
 import string
 from datetime import datetime
+from functools import lru_cache, partial
+from typing import Any, Hashable
 
 import pandas as pd
 
 from func_helpers import (
-    publish_message,
     publish_request,
 )
 
@@ -36,84 +37,29 @@ def request_for_chunking(
         "chunk_algo_version": "4",
     }
     publish_request(data)
-    print(f"request_for_chunking: action={action}, batch_id={batch_id}")
-    return data
-
-
-def request_for_extract(
-    extraction_type: str,
-    batch_id,
-    cik: str,
-    company_name: str,
-    accession_number: str,
-    embedding_model: str,
-    embedding_dimension: int,
-    extraction_model: str,
-):
-    action = (
-        "extract_trustee_comp"
-        if extraction_type == "trustee"
-        else "extract_fundmgr_ownership"
+    print(
+        f"chunking: {run_extract}, batch_id={batch_id}, filing={cik}/{accession_number}, "  # noqa E501
     )
-    data = {
-        "batch_id": batch_id,
-        "action": action,
-        "cik": cik,
-        "company_name": company_name,
-        "accession_number": accession_number,
-        "embedding_model": embedding_model,
-        "embedding_dimension": embedding_dimension,
-        "model": extraction_model,
-        "chunk_algo_version": "4",
-    }
-    publish_request(data)
-    print(f"request_for_extract: action={action}, batch_id={batch_id}")
     return data
 
 
-def send_test_extraction_result():
-    extraction_result = {
-        "batch_id": _batch_id(),
-        "cik": "1",
-        "company_name": "some_company",
-        "accession_number": "1",
-        "date_filed": "2022-12-01",
-        "selected_chunks": [123, 456],
-        "selected_text": "some_text",
-        "response": "{}",
-        "notes": "some_notes",
-        "model": "gemini-flash-2.0",
-        "extraction_type": "trustee_comp",
-    }
-    publish_message(extraction_result, os.environ.get("EXTRACTION_RESULT_TOPIC", ""))
-
-
-def sample_catalog_and_send_requests(output_file: str, dryrun: bool, percentage: int):
-    df_filings = _get_filings_by_range("2023-01-01", "2024-12-31")
-
+def batch_request(todo_list: list[dict[Hashable, Any]], output_file: str, request_func):
     batch_id = _batch_id()
-    n_total, n_processed = len(df_filings), 0
-
-    df_sample = df_filings.sample(frac=float(percentage) / 100)
+    n_total, n_processed = len(todo_list), 0
 
     with open(output_file, "w") as f:
         f.write("batch_id,cik,company_name,accession_number\n")
-        for idx, row in df_sample.iterrows():
+        for row in todo_list:
             cik = str(row["cik"])
             accession_number = str(row["accession_number"])
             company_name = row["company_name"].strip()  # pyright: ignore
             f.write(f"{batch_id},{cik},{company_name},{accession_number}\n")
-            if not dryrun:
-                request_for_chunking(
-                    batch_id=batch_id,
-                    cik=cik,
-                    company_name=company_name,
-                    accession_number=accession_number,
-                    embedding_model="text-embedding-3-small",
-                    embedding_dimension=1536,
-                    extraction_model="gemini-2.0-flash",
-                    run_extract="fundmgr",
-                )
+            request_func(
+                batch_id=batch_id,
+                cik=cik,
+                company_name=company_name,
+                accession_number=accession_number,
+            )
 
             n_processed += 1
 
@@ -128,6 +74,7 @@ def _batch_id() -> str:
     return f"{tstamp}-{suffix}"
 
 
+@lru_cache(maxsize=1)
 def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
     df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
     assert len(df_filings) > 10000
@@ -150,62 +97,15 @@ def parse_cli():
         type=str,
         choices=[
             "chunk",
-            "extract",
-            "publish-test-result",
-            "sample",
-        ],
-        help="Command to execute: chunk, extract, trustee or sample",
-    )
-    parser.add_argument(
-        "cik",
-        type=str,
-        nargs="?",
-        default=None,
-        help="CIK of the filing (optional)",
-    )
-    parser.add_argument(
-        "accession_number",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Accession Number of the filing",
-    )
-    parser.add_argument(
-        "extract_type",
-        type=str,
-        choices=[
             "trustee",
             "fundmgr",
         ],
-        help="Extraction type",
+        help="Command to execute: chunk, trustee or fundmgr",
     )
     parser.add_argument(
-        "--dryrun",
-        action="store_true",
-        default=False,
-        help="Run in dry-run mode",
-    )
-    parser.add_argument(
-        "--percentage",
-        type=int,
-        default=1,
-        help="Percentage of filings to process (default: 10)",
-    )
-    parser.add_argument(
-        "-i",
-        "--input",
+        "arg1",
         type=str,
-        nargs="?",
-        default=None,
-        help="Input file path",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Output file path",
+        help="Accession Number to process or percentage of filings to sample",
     )
     parser.add_argument(
         "--start",
@@ -237,41 +137,63 @@ def parse_cli():
         default="gemini-flash-2.0",
         help="Model to use for extraction (default: gemini-flash-2.0)",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if re.match(r"^\d{10}-\d{2}-\d{6}$", args.arg1):
+        args.accession_number = args.arg1
+        args.percentage = 0
+    elif args.arg1.isdigit():
+        args.percentage = int(args.arg1)
+    else:
+        parser.error(f"Invalid accession number format: {args.arg1}")
+
+    return args
 
 
 def main():
     args = parse_cli()
 
-    batch_id = _batch_id()
     if args.command == "chunk":
-        request_for_chunking(
-            batch_id=batch_id,
-            cik=args.cik,
-            company_name=f"Manual trigger {args.cik}",
-            accession_number=args.accession_number,
-            embedding_model=args.embedding_model,
-            embedding_dimension=args.embedding_dimension,
-            extraction_model=args.extraction_model,
-        )
-    elif args.command == "extract":
-        request_for_extract(
-            batch_id=batch_id,
-            cik=args.cik,
-            company_name=f"Manual trigger {args.cik}",
-            accession_number=args.accession_number,
-            embedding_model=args.embedding_model,
-            embedding_dimension=args.embedding_dimension,
-            extraction_model=args.extraction_model,
-            extraction_type=args.extract_type,
-        )
-    elif args.command == "publish-test-result":
-        send_test_extraction_result()
-    elif args.command == "sample":
-        output_file = args.output if args.output else "tmp/sampled.csv"
-        sample_catalog_and_send_requests(output_file, args.dryrun, args.percentage)
+        run_extract = ""
+    elif args.command == "trustee":
+        run_extract = "trustee"
+    elif args.command == "fundmgr":
+        run_extract = "fundmgr"
     else:
-        print("Unknown command")
+        print(f"Unknown command: {args.command}")
+        return
+
+    request_func = partial(
+        request_for_chunking,
+        embedding_model=args.embedding_model,
+        embedding_dimension=args.embedding_dimension,
+        extraction_model=args.extraction_model,
+        run_extract=run_extract,
+    )
+
+    df_filings = _get_filings_by_range(args.start, args.end)
+    if args.percentage:
+        df_todo = df_filings.sample(frac=float(args.percentage) / 100)
+        if len(df_todo) == 0:
+            print("No filings to process")
+            return
+    elif args.accession_number:
+        df_todo = df_filings[df_filings["accession_number"] == args.accession_number]
+        if df_todo.empty:
+            print(f"Accession number {args.accession_number} not found in the catalog.")
+            return
+    else:
+        print("No accession number or percentage provided")
+        return
+
+    todo_list = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
+        orient="records"
+    )
+    batch_request(
+        todo_list=todo_list,
+        output_file="tmp/processed.csv",
+        request_func=request_func,
+    )
 
 
 if __name__ == "__main__":
