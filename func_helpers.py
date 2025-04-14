@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 from typing import Any
 
-import google.auth  # Add this import
+import google.auth
 from dotenv import load_dotenv
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1

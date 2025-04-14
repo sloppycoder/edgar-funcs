@@ -3,7 +3,7 @@ import os
 import pytest  # noqa F401
 
 from cli import _batch_id
-from edgar_funcs.func_helpers import publish_message
+from func_helpers import publish_message
 
 
 @pytest.mark.skip(reason="for local use only")

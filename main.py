@@ -7,15 +7,15 @@ import traceback
 import functions_framework
 from cloudevents.http import CloudEvent
 
-from edgar_funcs.func_helpers import (
+from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
+from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
+from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
+from func_helpers import (
     publish_message,
     publish_request,
     publish_response,
     setup_cloud_logging,
 )
-from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
-from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
-from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 
 setup_cloud_logging()
 logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ from typing import Any, Hashable
 
 import pandas as pd
 
-from edgar_funcs.func_helpers import (
+from func_helpers import (
     publish_request,
 )
 
