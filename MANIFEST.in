@@ -1,0 +1,8 @@
+# Include README and license files
+include README.md
+
+# Include all files in the edgar_funcs/data directory
+recursive-include edgar_funcs/data *
+
+# Exclude test files
+exclude tests/*

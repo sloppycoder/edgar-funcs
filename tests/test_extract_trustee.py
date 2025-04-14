@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from rag.extract.trustee import extract_trustee_comp_from_filing
+from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from tests.utils import mock_file_content
 
 embedding_model, embedding_dimension = "text-embedding-005", 768
@@ -9,7 +9,7 @@ extraction_model = "gemini-1.5-flash-002"
 
 def test_extract_html_filing():
     with patch(
-        "rag.extract.trustee.ask_model",
+        "edgar_funcs.rag.extract.trustee.ask_model",
         return_value=mock_file_content(
             "response/gemini-1.5-flash-002/1002427/0001133228-24-004879_trustee_comp.txt"
         ),
@@ -32,7 +32,7 @@ def test_extract_html_filing():
 
 def test_extract_txt_filing():
     with patch(
-        "rag.extract.trustee.ask_model",
+        "edgar_funcs.rag.extract.trustee.ask_model",
         return_value=mock_file_content(
             "response/gemini-1.5-flash-002/1201932/0000950136-04-001365.txt"
         ),

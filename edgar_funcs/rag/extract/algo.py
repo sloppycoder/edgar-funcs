@@ -1,7 +1,7 @@
 from rank_bm25 import BM25Okapi
 from scipy.spatial.distance import cosine
 
-from rag.vectorize import TextChunksWithEmbedding
+from edgar_funcs.rag.vectorize import TextChunksWithEmbedding
 
 
 def top_adjacent_chunks(relevance_scores) -> list[str]:
@@ -198,20 +198,22 @@ def preprocess_text(text: str) -> list[str]:
     """
     # Basic lowercase and split
     tokens = text.lower().split()
-    
+
     # Process tokens to handle dollar amounts
     processed_tokens = []
     for token in tokens:
         # Keep original token
         processed_tokens.append(token)
-        
+
         # Handle dollar signs and commas in numbers
-        if '$' in token or ',' in token:
+        if "$" in token or "," in token:
             # Remove $ and commas from numbers
-            stripped = token.replace('$', '').replace(',', '')
-            if stripped.isdigit() or (stripped.replace('-', '').isdigit() and '-' in stripped):
+            stripped = token.replace("$", "").replace(",", "")
+            if stripped.isdigit() or (
+                stripped.replace("-", "").isdigit() and "-" in stripped
+            ):
                 processed_tokens.append(stripped)
-    
+
     return processed_tokens
 
 

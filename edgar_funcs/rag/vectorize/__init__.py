@@ -5,8 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TypedDict
 
-from edgar import SECFiling
-
+from ...edgar import SECFiling
 from ..helper import gcs_client
 from .chunking import chunk_text, trim_html_content
 from .embedding import batch_embedding

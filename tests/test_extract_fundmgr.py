@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
-from edgar import SECFiling
-from rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
-from rag.vectorize import TextChunksWithEmbedding
-from rag.vectorize.chunking import chunk_text, trim_html_content
+from edgar_funcs.edgar import SECFiling
+from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
+from edgar_funcs.rag.vectorize import TextChunksWithEmbedding
+from edgar_funcs.rag.vectorize.chunking import chunk_text, trim_html_content
 from tests.utils import mock_file_content
 
 embedding_model, embedding_dimension, extraction_model = (
@@ -24,7 +24,7 @@ def test_extract_fundmgr_ownership():
         f"response/{extraction_model}/{cik}/{accession_number}_fundmgr_ownership.txt"
     )
     with patch(
-        "rag.extract.fundmgr.ask_model",
+        "edgar_funcs.rag.extract.fundmgr.ask_model",
         return_value=mock_file_content(mock_response),
     ):
         result = extract_fundmgr_ownership_from_filing(

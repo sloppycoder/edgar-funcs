@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from edgar import (
+from edgar_funcs.edgar import (
     SECFiling,
     _index_html_path,
     parse_idx_filename,
@@ -28,7 +28,7 @@ def test_parse_idx_filename():
 
 
 def test_parse_485bpos_filing():
-    with patch("edgar.edgar_file", side_effect=mock_file_content):
+    with patch("edgar_funcs.edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
         html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
 
@@ -40,10 +40,9 @@ def test_parse_485bpos_filing():
 
 
 def test_parse_old_485bpos_filing():
-    # with patch("edgar.edgar_file", side_effect=mock_file_content):
     # this is an old filing where index-headers.html does not exist
     # so we must parse index.html to get the documents list
-    with patch("edgar.edgar_file", side_effect=mock_file_content):
+    with patch("edgar_funcs.edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(
             cik="1201932",
             accession_number="0000950136-04-001365",
@@ -60,7 +59,7 @@ def test_parse_old_485bpos_filing():
 
 def test_load_filing_catalog():
     catalog_blob = mock_file_content(
-        "pickle/catalog/all_485bpos_pd.pickle", is_binary=True
+        "../../edgar_funcs/data/catalog/all_485bpos_pd.pickle", is_binary=True
     )
     df_filings = pd.read_pickle(io.BytesIO(catalog_blob))
     assert df_filings.size > 17000

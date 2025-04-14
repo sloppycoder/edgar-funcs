@@ -2,13 +2,13 @@ from unittest.mock import patch
 
 import pytest
 
-from edgar import SECFiling
-from rag.vectorize import (
+from edgar_funcs.edgar import SECFiling
+from edgar_funcs.rag.vectorize import (
     TextChunksWithEmbedding,
     _storage_prefix,
     chunk_filing,
 )
-from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
+from edgar_funcs.rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content, mock_json_dict
 
 embedding_model, embedding_dimension = "text-embedding-005", 768
@@ -19,14 +19,14 @@ def test_one_filing_chunk_save_load():
     full lifecycle of a filing
     download, chunk, get embedding, save and load
     """
-    with patch("edgar.edgar_file", side_effect=mock_file_content):
+    with patch("edgar_funcs.edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
         text_chunks = chunk_filing(filing)
         assert text_chunks
 
     mock_json_path = f"embeddings/{embedding_model}_{embedding_dimension}/1002427/0001133228-24-004879.json"  # noqa E501
     with patch(
-        "rag.vectorize.batch_embedding",
+        "edgar_funcs.rag.vectorize.batch_embedding",
         return_value=mock_json_dict(mock_json_path),
     ):
         chunks = TextChunksWithEmbedding(

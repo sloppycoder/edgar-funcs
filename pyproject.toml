@@ -1,6 +1,6 @@
 [project]
 name = "edgar-funcs"
-version = "0.1.0"
+version = "0.5.0"
 description = "Cloud funtions for processing SEC filings on EDGAR site"
 authors = [{ name = "Li Lin", email = "guru.lin@gmail.com" }]
 readme = "README.md"
@@ -22,7 +22,6 @@ dependencies = [
     "openai>=1.66.3",
     "scipy>=1.15.2",
     "pandas>=2.2.3",
-    "pympler>=1.1",
     "google-cloud-bigquery>=3.30.0",
     "rank-bm25>=0.2.2",
 ]
@@ -39,6 +38,18 @@ dev = [
     "ruff >= 0.9.6",
     "pyright==1.1.398",
 ]
+
+[tool.setuptools]
+packages = [
+    "edgar_funcs",
+    "edgar_funcs.rag",
+    "edgar_funcs.rag.extract",
+    "edgar_funcs.rag.vectorize"
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.uv]
 managed = true

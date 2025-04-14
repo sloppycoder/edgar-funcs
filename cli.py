@@ -9,7 +9,7 @@ from typing import Any, Hashable
 
 import pandas as pd
 
-from func_helpers import (
+from edgar_funcs.func_helpers import (
     publish_request,
 )
 
@@ -77,7 +77,9 @@ def _batch_id() -> str:
 
 @lru_cache(maxsize=1)
 def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
-    catalog_path = Path(__file__).parent / "data/catalog/all_485bpos_pd.pickle"
+    catalog_path = (
+        Path(__file__).parent / "edgar_funcs/data/catalog/all_485bpos_pd.pickle"
+    )
     df_filings = pd.read_pickle(catalog_path)
     assert len(df_filings) > 10000
 

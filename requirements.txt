@@ -253,8 +253,6 @@ pydantic-core==2.27.2
     # via pydantic
 pygments==2.19.1
     # via rich
-pympler==1.1
-    # via edgar-funcs (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
     #   google-cloud-bigquery
