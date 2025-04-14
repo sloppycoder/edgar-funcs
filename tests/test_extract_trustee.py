@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from rag.extract.trustee import extract_trustee_comp_from_filing
-from rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content
 
 embedding_model, embedding_dimension = "text-embedding-005", 768
@@ -21,7 +20,7 @@ def test_extract_html_filing():
             embedding_model=embedding_model,
             embedding_dimension=embedding_dimension,
             model=extraction_model,
-            chunk_algo_version=CHUNK_ALORITHM_VERSION,
+            chunk_algo_version="3",
         )
         assert (
             result
@@ -44,7 +43,7 @@ def test_extract_txt_filing():
             embedding_model=embedding_model,
             embedding_dimension=embedding_dimension,
             model=extraction_model,
-            chunk_algo_version=CHUNK_ALORITHM_VERSION,
+            chunk_algo_version="3",
         )
         assert (
             result

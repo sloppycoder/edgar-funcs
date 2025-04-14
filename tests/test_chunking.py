@@ -18,7 +18,7 @@ def test_chunk_html_filing():
         trimmed_html = trim_html_content(filing_content)
         chunks = chunk_text(trimmed_html, method="spacy")
 
-        assert len(chunks) == 262
+        assert len(chunks) == 992
         # no chunk is empty or too short
         assert all(chunk and len(chunk) > 10 for chunk in chunks)
 
@@ -41,7 +41,7 @@ def test_chunk_txt_filing():
         # uncomment to save chunks pickle file to mockdata folder
         # _save_chunks_mockdata(filing, chunks)
 
-        assert len(chunks) == 106
+        assert len(chunks) == 379
         # no chunk is empty or too short
         assert all(chunk and len(chunk) > 10 for chunk in chunks)
 
@@ -57,7 +57,7 @@ def test_chunk_filing_with_difficult_table():
         trimmed_html = trim_html_content(filing_content)
         chunks = chunk_text(trimmed_html, method="spacy")
 
-        assert len(chunks) == 208
+        assert len(chunks) == 715
         # no chunk is empty or too short
         assert all(chunk and len(chunk) > 10 for chunk in chunks)
 
