@@ -4,6 +4,7 @@ import re
 import string
 from datetime import datetime
 from functools import lru_cache, partial
+from pathlib import Path
 from typing import Any, Hashable
 
 import pandas as pd
@@ -76,7 +77,8 @@ def _batch_id() -> str:
 
 @lru_cache(maxsize=1)
 def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
-    df_filings = pd.read_pickle("tests/mockdata/pickle/catalog/all_485bpos_pd.pickle")
+    catalog_path = Path(__file__).parent / "data/catalog/all_485bpos_pd.pickle"
+    df_filings = pd.read_pickle(catalog_path)
     assert len(df_filings) > 10000
 
     df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
