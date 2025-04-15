@@ -1,8 +1,10 @@
 import logging
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -261,3 +263,23 @@ def _index_html_path(idx_filename: str) -> str:
     filepath = Path(idx_filename)
     basename = filepath.name.replace(".txt", "")
     return str(filepath.parent / basename.replace("-", "") / f"{basename}-index.html")
+
+
+@lru_cache(maxsize=1)
+def load_filing_catalog(start_date: str, end_date: str) -> pd.DataFrame:
+    """
+    load local copy of 485BPOS filings catalog
+    """
+    catalog_path = Path(__file__).parent / "data/catalog/all_485bpos_pd.pickle"
+    df_filings = pd.read_pickle(catalog_path)
+    assert len(df_filings) > 10000
+
+    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
+    assert len(df_cik) > 1000
+
+    df_filtered = df_filings[
+        (df_filings["date_filed"] > start_date) & (df_filings["date_filed"] < end_date)
+    ]
+    df_result = pd.merge(df_filtered, df_cik, on="cik")  # pyright: ignore
+    df_result["cik"] = df_result["cik"].astype(str)
+    return df_result

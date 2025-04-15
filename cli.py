@@ -3,12 +3,10 @@ import random
 import re
 import string
 from datetime import datetime
-from functools import lru_cache, partial
-from pathlib import Path
+from functools import partial
 from typing import Any, Hashable
 
-import pandas as pd
-
+from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import (
     publish_request,
 )
@@ -73,25 +71,6 @@ def _batch_id() -> str:
     tstamp = datetime.now().strftime("%Y%m%d%H%M%S")
     suffix = "".join(random.choices(string.ascii_lowercase, k=3))
     return f"{tstamp}-{suffix}"
-
-
-@lru_cache(maxsize=1)
-def _get_filings_by_range(start_date: str, end_date: str) -> pd.DataFrame:
-    catalog_path = (
-        Path(__file__).parent / "edgar_funcs/data/catalog/all_485bpos_pd.pickle"
-    )
-    df_filings = pd.read_pickle(catalog_path)
-    assert len(df_filings) > 10000
-
-    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
-    assert len(df_cik) > 1000
-
-    df_filtered = df_filings[
-        (df_filings["date_filed"] > start_date) & (df_filings["date_filed"] < end_date)
-    ]
-    df_result = pd.merge(df_filtered, df_cik, on="cik")  # pyright: ignore
-    df_result["cik"] = df_result["cik"].astype(str)
-    return df_result
 
 
 def parse_cli():
@@ -175,7 +154,7 @@ def main():
         run_extract=run_extract,
     )
 
-    df_filings = _get_filings_by_range(args.start, args.end)
+    df_filings = load_filing_catalog(args.start, args.end)
     if args.percentage:
         df_todo = df_filings.sample(frac=float(args.percentage) / 100)
         if len(df_todo) == 0:
