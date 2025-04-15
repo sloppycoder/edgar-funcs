@@ -76,10 +76,10 @@ class TextChunksWithEmbedding:
     def get_text_chunks(self, chunks: list[int]) -> str:
         return "\n\n".join([self.texts[i] for i in chunks])
 
-    def save(self) -> None:
+    def save(self, storage_base_path=os.environ.get("STORAGE_PREFIX", "")) -> None:
         if self.is_ready():
             path = _blob_path(**self.metadata)
-            bucket_name, prefix = _storage_prefix()
+            bucket_name, prefix = _storage_prefix(storage_base_path)
             obj = [self.texts, self.embeddings, self.metadata]
             if bucket_name:
                 # use GCS bucket
@@ -103,6 +103,7 @@ class TextChunksWithEmbedding:
         model: str,
         dimension: int,
         chunk_algo_version: str,
+        storage_base_path=os.environ.get("STORAGE_PREFIX", ""),
     ) -> "TextChunksWithEmbedding":
         path = _blob_path(
             cik=cik,
@@ -111,7 +112,7 @@ class TextChunksWithEmbedding:
             dimension=dimension,
             chunk_algo_version=chunk_algo_version,
         )
-        bucket_name, prefix = _storage_prefix()
+        bucket_name, prefix = _storage_prefix(storage_base_path)
         obj = None
         if bucket_name:
             # use GCS bucket
@@ -207,7 +208,7 @@ def _blob_path(
     )
 
 
-def _storage_prefix(storage_base_path=os.environ.get("STORAGE_PREFIX", "")):
+def _storage_prefix(storage_base_path: str):
     # return tuple of (bucket_name, prefix)
     # if the env var does not beginw with "gs://", returns ""
     if storage_base_path.startswith("gs://"):

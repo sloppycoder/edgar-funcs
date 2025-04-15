@@ -1,6 +1,6 @@
 [project]
 name = "edgar-funcs"
-version = "0.5.0"
+version = "0.5.1"
 description = "Cloud funtions for processing SEC filings on EDGAR site"
 authors = [{ name = "Li Lin", email = "guru.lin@gmail.com" }]
 readme = "README.md"
@@ -57,16 +57,6 @@ managed = true
 [tool.uv.sources]
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = ["tests"]
-pythonpath = ["."]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-]
-env_files = [".env"]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["."]
