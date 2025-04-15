@@ -270,11 +270,12 @@ def load_filing_catalog(start_date: str, end_date: str) -> pd.DataFrame:
     """
     load local copy of 485BPOS filings catalog
     """
-    catalog_path = Path(__file__).parent / "data/catalog/all_485bpos_pd.pickle"
+    data_path = Path(__file__).parent / "data/catalog"
+    catalog_path = data_path / "all_485bpos_pd.pickle"
     df_filings = pd.read_pickle(catalog_path)
     assert len(df_filings) > 10000
 
-    df_cik = pd.read_csv("tests/mockdata/misc/cik.csv")
+    df_cik = pd.read_csv(data_path / "interested_cik_list.csv")
     assert len(df_cik) > 1000
 
     df_filtered = df_filings[
