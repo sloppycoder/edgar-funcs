@@ -1,0 +1,11 @@
+{
+    "exclude": [
+        ".venv/",
+        "build/",
+    ],
+    "include": [
+        "*.py",
+        "tests/*.py"
+    ],
+    "pythonVersion": "3.12"
+}
