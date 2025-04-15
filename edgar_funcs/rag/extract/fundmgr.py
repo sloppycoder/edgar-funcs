@@ -11,6 +11,7 @@ from .algo import (
     relevance_by_appearance,
     relevance_by_distance,
     top_adjacent_chunks,
+    top_chunks,
 )
 from .llm import ask_model, remove_md_json_wrapper
 
@@ -170,7 +171,7 @@ def _extract_fundmgr_ownership(
         "ownership_info": {},
     }
 
-    for method in ["distance", "appearance"]:
+    for method in ["distance", "top5"]:
         relevant_chunks, relevant_text = _find_relevant_text(
             queries,
             chunks,
@@ -228,6 +229,9 @@ def _find_relevant_text(
     elif method == "appearance":
         relevance_scores = relevance_by_appearance(chunk_distances)
         selected_chunks = [int(s) for s in top_adjacent_chunks(relevance_scores)]
+    elif method == "top5":
+        relevance_scores = relevance_by_appearance(chunk_distances)
+        selected_chunks = [int(s) for s in top_chunks(relevance_scores, 5)]
     else:
         raise ValueError(f"Unknown method: {method}")
 

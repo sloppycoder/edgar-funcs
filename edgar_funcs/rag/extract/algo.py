@@ -26,11 +26,11 @@ def top_adjacent_chunks(relevance_scores) -> list[str]:
     return []
 
 
-def top_3_chunks(relevance_scores) -> list[str]:
+def top_chunks(relevance_scores, top_k: int) -> list[str]:
     """
-    just return top 3 chunks, sorted, regardless if they're adjacent or not
+    just return top chunks, sorted, regardless if they're adjacent or not
     """
-    top_chunks = [chunk_num for chunk_num, _, _, _ in relevance_scores[:3]]
+    top_chunks = [chunk_num for chunk_num, _, _, _ in relevance_scores[:top_k]]
     top_chunks.sort()
     return top_chunks
 
