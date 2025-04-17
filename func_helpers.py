@@ -46,7 +46,7 @@ def setup_cloud_logging():
         logging.info("Using local logging.")
 
     app_log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO"), logging.INFO)
-    for app_module in ["edgar", "rag", "main", "func_helpers"]:
+    for app_module in ["edgar_funcs", "main", "func_helpers"]:
         logging.getLogger(app_module).setLevel(app_log_level)
 
 
