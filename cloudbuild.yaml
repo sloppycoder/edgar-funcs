@@ -60,4 +60,5 @@ steps:
           --cpu=2 \
           --memory=1Gi \
           --timeout=900s \
-          --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}
+          --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET} \
+          --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_TOPIC=${_EXTRACTION_RESULT_TOPIC}
