@@ -30,6 +30,8 @@ click==8.1.8
     # via
     #   flask
     #   typer
+cloudevents==1.11.0
+    # via edgar-funcs (pyproject.toml)
 cloudpathlib==0.21.0
     # via weasel
 confection==0.1.5
@@ -45,6 +47,8 @@ deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
+deprecation==2.1.0
+    # via cloudevents
 distro==1.9.0
     # via openai
 docstring-parser==0.16
@@ -192,6 +196,7 @@ opentelemetry-semantic-conventions==0.52b0
     # via opentelemetry-sdk
 packaging==24.2
     # via
+    #   deprecation
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
     #   spacy

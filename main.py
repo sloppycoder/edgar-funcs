@@ -1,9 +1,9 @@
-import base64
 import json
 import logging
 import os
 import traceback
 
+from cloudevents.http import from_http
 from flask import Flask, jsonify, request
 
 from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
@@ -23,16 +23,10 @@ app = Flask(__name__)
 @app.route("/process", methods=["POST"])
 def req_processor():
     try:
-        # Handle Pub/Sub push subscription message
-        envelope = request.get_json()
-        if not envelope or "message" not in envelope:
-            logger.error("No Pub/Sub message received.")
-            return jsonify({"error": "No Pub/Sub message received."}), 400
-
-        pubsub_message = envelope["message"]
-        decoded_data = base64.b64decode(pubsub_message["data"]).decode("utf-8")
-        data = json.loads(decoded_data)
-        logger.info(f"Received request: {data}")
+        # Handle CloudEvent
+        event = from_http(request.headers, request.get_data(), json.loads)  # pyright: ignore
+        data = event.data
+        logger.info(f"Received CloudEvent: {data}")
 
         action = data.get("action")
         if action not in ["chunk", "trustee", "fundmgr"]:
