@@ -2,14 +2,12 @@ substitutions:
   _SM_PROJECT_ID: "edgar-ai"
   _REGION: "us-central1"
   _RUNTIME: "python312"
-  _REQ_TOPIC: "edgarai-request"
-  _RES_TOPIC: "edgarai-response"
   _EXTRACTION_RESULT_TOPIC: "edgarai-extraction-result"
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
   _OPENAI_API_KEY_SECRET: "projects/1049830028293/secrets/openai-api-key:latest"
-  _SECRET_NAME: ""
+  _DOCKER_IMAGE: "gcr.io/edgar-ai/edgar-funcs"
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -31,58 +29,35 @@ steps:
   #     - name: "pip_cache"
   #       path: "/workspace/.pip_cache"
 
-  # Prepare source for both functions
+  # Build Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-docker-image"
+    args:
+      - "build"
+      - "-t"
+      - "${_DOCKER_IMAGE}"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-docker-image"
+    args:
+      - "push"
+      - "${_DOCKER_IMAGE}"
+
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    id: "prepare-source"
+    id: "deploy-cloud-run"
     entrypoint: "bash"
     args:
       - "-c"
       - |
-        # Create a source directory with all the files
-        mkdir -p /workspace/function-source
-        cp -R * /workspace/function-source/ 2>/dev/null || true
-        cp -R .* /workspace/function-source/ 2>/dev/null || true
-
-  # Deploy req_processor
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
-    args:
-      - "functions"
-      - "deploy"
-      - "edgar_req_processor"
-      - "--gen2"
-      - "--region=${_REGION}"
-      - "--runtime=${_RUNTIME}"
-      - "--memory=2G"
-      - "--timeout=540s"
-      - "--max-instances=10"
-      - "--service-account"
-      - "${_SERVICE_ACCOUNT}"
-      - "--trigger-topic=${_REQ_TOPIC}"
-      - "--entry-point=req_processor"
-      - "--source=/workspace/function-source"
-      - "--set-secrets"
-      - "OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}"
-      - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_TOPIC=${_EXTRACTION_RESULT_TOPIC},RESPONSE_TOPIC=${_RES_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
-
-  # Deploy resp_processor
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
-    args:
-      - "functions"
-      - "deploy"
-      - "edgar_resp_processor"
-      - "--gen2"
-      - "--region=${_REGION}"
-      - "--runtime=${_RUNTIME}"
-      - "--memory=1G"
-      - "--timeout=60s"
-      - "--max-instances=10"
-      - "--service-account"
-      - "${_SERVICE_ACCOUNT}"
-      - "--trigger-topic=${_RES_TOPIC}"
-      - "--entry-point=resp_processor"
-      - "--source=/workspace/function-source"
-      - "--set-env-vars"
-      - "STORAGE_PREFIX=${_STORAGE_PREFIX},REQUEST_TOPIC=${_REQ_TOPIC},LOG_LEVEL=${_LOG_LEVEL}"
+        gcloud run deploy edgar-processor \
+          --image=${_DOCKER_IMAGE} \
+          --region=${_REGION} \
+          --platform=managed \
+          --service-account=${_SERVICE_ACCOUNT} \
+          --concurrency=1 \
+          --max-instances=10 \
+          --cpu=2 \
+          --memory=1Gi \
+          --timeout=900s \
+          --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}

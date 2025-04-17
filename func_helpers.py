@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import Any
 
 import google.auth
 from dotenv import load_dotenv
@@ -71,16 +70,3 @@ def publish_message(message: dict, topic_name: str):
         )
     else:
         logging.info(f"Invalid topic {topic_name} or project {gcp_proj_id}")
-
-
-def publish_response(params: dict[str, Any], is_success: bool, msg: str):
-    data = {
-        "params": params,
-        "success": is_success,
-        "message": msg,
-    }
-    publish_message(data, os.getenv("RESPONSE_TOPIC", ""))
-
-
-def publish_request(data: dict[str, Any]):
-    publish_message(data, os.getenv("REQUEST_TOPIC", ""))
