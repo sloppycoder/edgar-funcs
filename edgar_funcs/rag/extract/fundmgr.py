@@ -188,9 +188,11 @@ def _extract_fundmgr_ownership(
         response = _ask_model_about_fundmgr_ownership(model, relevant_text)
         if response:
             try:
-                result["response"] = response
-                result["ownership_info"] = json.loads(response)
-                return result
+                ownership_info = json.loads(response)
+                if "managers" in ownership_info and len(ownership_info["managers"]) > 0:
+                    result["response"] = response
+                    result["ownership_info"] = ownership_info
+                    return result
 
             except json.JSONDecodeError:
                 pass

@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest  # noqa: F401
+
 from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from edgar_funcs.rag.vectorize import TextChunksWithEmbedding
@@ -15,10 +17,6 @@ embedding_model, embedding_dimension, extraction_model = (
 
 def test_extract_fundmgr_ownership():
     cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "4"
-    # cik, accession_number, chunk_algo_version = "19034", "0001104659-24-051926", "4"
-
-    # uncomment the following if test data does not exist
-    # _prep_filing(cik, accession_number, chunk_algo_version)
 
     mock_response = (
         f"response/{extraction_model}/{cik}/{accession_number}_fundmgr_ownership.txt"
@@ -44,7 +42,33 @@ def test_extract_fundmgr_ownership():
         )
 
 
-def _prep_filing(cik: str, accession_number: str, chunk_algo_version: str):
+@pytest.mark.skip(reason="local test only")
+def test_full_extract_fundmgr_ownership():
+    cik, accession_number, chunk_algo_version = "1342947", "0001213900-24-018034", "4"
+
+    try:
+        TextChunksWithEmbedding.load(
+            cik=cik,
+            accession_number=accession_number,
+            chunk_algo_version=chunk_algo_version,
+            model=embedding_model,
+            dimension=embedding_dimension,
+        )
+    except ValueError:
+        _chunk_and_get_embeddings(cik, accession_number, chunk_algo_version)
+
+    result = extract_fundmgr_ownership_from_filing(
+        cik=cik,
+        accession_number=accession_number,
+        embedding_model=embedding_model,
+        embedding_dimension=embedding_dimension,
+        model=extraction_model,
+        chunk_algo_version=chunk_algo_version,
+    )
+    assert result and result["ownership_info"]
+
+
+def _chunk_and_get_embeddings(cik: str, accession_number: str, chunk_algo_version: str):
     filing = SECFiling(
         cik=cik,
         accession_number=accession_number,
@@ -65,7 +89,7 @@ def _prep_filing(cik: str, accession_number: str, chunk_algo_version: str):
             "cik": filing.cik,
             "accession_number": filing.accession_number,
             "date_filed": filing.date_filed,
-            "chunk_version": chunk_algo_version,
+            "chunk_algo_version": chunk_algo_version,
         },
     )
     chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
