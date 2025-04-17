@@ -13,11 +13,8 @@ from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import publish_message
 
 
-def publish_request(data: dict[str, Any]):
-    publish_message(data, os.getenv("REQUEST_TOPIC", ""))
-
-
-def request_for_chunking(
+def send_request(
+    action: str,
     batch_id: str,
     cik: str,
     company_name: str,
@@ -25,9 +22,7 @@ def request_for_chunking(
     embedding_model: str,
     embedding_dimension: int,
     extraction_model: str,
-    run_extract: str = "",
 ):
-    action = "chunk_one_filing"
     data = {
         "batch_id": batch_id,
         "action": action,
@@ -37,11 +32,10 @@ def request_for_chunking(
         "embedding_model": embedding_model,
         "embedding_dimension": embedding_dimension,
         "model": extraction_model,
-        "run_extract": run_extract,
         "chunk_algo_version": "4",
     }
-    publish_request(data)
-    print(f"chunking: {run_extract}, filing={cik}/{accession_number}, ")
+    publish_message(data, os.getenv("REQUEST_TOPIC", ""))
+    print(f"{action}: filing={cik}/{accession_number}")
     return data
 
 
@@ -141,22 +135,12 @@ def parse_cli():
 def main():
     args = parse_cli()
 
-    if args.command == "chunk":
-        run_extract = ""
-    elif args.command == "trustee":
-        run_extract = "trustee"
-    elif args.command == "fundmgr":
-        run_extract = "fundmgr"
-    else:
-        print(f"Unknown command: {args.command}")
-        return
-
     request_func = partial(
-        request_for_chunking,
+        send_request,
+        action=args.command,
         embedding_model=args.embedding_model,
         embedding_dimension=args.embedding_dimension,
         extraction_model=args.extraction_model,
-        run_extract=run_extract,
     )
 
     df_filings = load_filing_catalog(args.start, args.end)

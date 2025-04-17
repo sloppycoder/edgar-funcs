@@ -9,7 +9,7 @@ from edgar_funcs.edgar import load_filing_catalog
 
 @pytest.fixture
 def mock_publish_request():
-    with patch("cli.publish_request") as mock:
+    with patch("cli.publish_message") as mock:
         yield mock
 
 
@@ -20,8 +20,7 @@ def test_chunk_command(mock_publish_request, monkeypatch):
     main()
     assert mock_publish_request.call_count > 0
     for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "chunk_one_filing"
-        assert call_args[0][0]["run_extract"] == ""
+        assert call_args[0][0]["action"] == "chunk"
 
 
 def test_trustee_command(mock_publish_request, monkeypatch):
@@ -31,8 +30,7 @@ def test_trustee_command(mock_publish_request, monkeypatch):
     main()
     assert mock_publish_request.call_count > 0
     for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "chunk_one_filing"
-        assert call_args[0][0]["run_extract"] == "trustee"
+        assert call_args[0][0]["action"] == "trustee"
 
 
 def test_fundmgr_command(mock_publish_request, monkeypatch):
@@ -42,8 +40,7 @@ def test_fundmgr_command(mock_publish_request, monkeypatch):
     main()
     assert mock_publish_request.call_count > 0
     for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "chunk_one_filing"
-        assert call_args[0][0]["run_extract"] == "fundmgr"
+        assert call_args[0][0]["action"] == "fundmgr"
 
 
 def test_invalid_accession_number(mock_publish_request, monkeypatch):
@@ -78,16 +75,16 @@ def test_specific_accession_number(mock_publish_request, monkeypatch):
     mock_publish_request.assert_called_once_with(
         {
             "batch_id": ANY,
-            "action": "chunk_one_filing",
+            "action": "chunk",
             "cik": "1224568",
             "company_name": ANY,
             "accession_number": "0001224568-24-000005",
             "embedding_model": "text-embedding-005",
             "embedding_dimension": 768,
             "model": "gemini-2.0-flash",
-            "run_extract": "",
             "chunk_algo_version": "4",
-        }
+        },
+        ANY,
     )
 
 
