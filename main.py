@@ -1,132 +1,99 @@
-import base64
-import json
 import logging
 import os
 import traceback
 
-import functions_framework
-from cloudevents.http import CloudEvent
+from flask import Flask, jsonify, request
 
 from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 from func_helpers import (
     publish_message,
-    publish_request,
-    publish_response,
     setup_cloud_logging,
 )
 
 setup_cloud_logging()
 logger = logging.getLogger(__name__)
 
+app = Flask(__name__)
 
-@functions_framework.cloud_event
-def req_processor(cloud_event: CloudEvent) -> None:
-    logger.info(f"req_processor received {cloud_event.data}")
-    data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
+
+@app.route("/process", methods=["POST"])
+def req_processor():
     try:
+        headers = request.headers
+        data = request.get_json()
+        logger.info(f"req_processor received {headers}, {data}")
+
         action = data.get("action")
+        if action not in ["chunk", "trstee", "fundmgr"]:
+            logger.info(f"Unknown action {action}, nothing to do")
+            return jsonify({"message": "Unknown action"}), 200
 
-        if action == "chunk_one_filing":
-            is_reuse, chunks = chunk_filing_and_save_embedding(**data)
-            if is_reuse:
-                logger.info(f"re-use existing {len(chunks.texts)} chunks for {data}")
-            else:
-                logger.info(f"created new {len(chunks.texts)} chunks for {data}")
+        is_reuse, chunks = chunk_filing_and_save_embedding(**data)
+        if is_reuse:
+            logger.info(f"re-use existing {len(chunks.texts)} chunks for {data}")
+        else:
+            logger.info(f"created new {len(chunks.texts)} chunks for {data}")
 
-            publish_response(data, True, "success")
+        extraction_result = {
+            "batch_id": data.get("batch_id", ""),
+            "cik": data.get("cik", "0"),
+            "company_name": data.get("company_name", "test company"),
+            "accession_number": data.get("accession_number", "0000000000-00-000000"),
+            "date_filed": data.get("date_filed", "1971-01-01"),
+            "model": data["model"],
+            "extraction_type": action,
+        }
 
-        elif action == "extract_trustee_comp":
+        if action == "trustee":
             result = extract_trustee_comp_from_filing(**data)
             if result:
                 logger.info(
                     f"extraction with {data} found {result['n_trustee']} trustees"
                 )
-                pub_data = dict(result)
-                pub_data["company_name"] = data["company_name"]
-                _publish_result(data, pub_data)
+                extraction_result["selected_chunks"] = result["selected_chunks"]
+                extraction_result["selected_text"] = result["selected_text"]
+                extraction_result["response"] = result["response"]
 
-                publish_response(data, True, "result published")
-            else:
-                publish_response(data, False, "no info extracted")
-
-        elif action == "extract_fundmgr_ownership":
+        elif action == "fundmgr":
             result = extract_fundmgr_ownership_from_filing(**data)
             if result:
                 logger.info(
                     f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
                 )
-                pub_data = dict(result)
-                pub_data["company_name"] = data["company_name"]
-                _publish_result(data, pub_data)
-
-                publish_response(data, True, "result published")
-            else:
-                publish_response(data, False, "no info extracted")
+                extraction_result["selected_chunks"] = result["selected_chunks"]
+                extraction_result["selected_text"] = result["selected_text"]
+                extraction_result["response"] = result["response"]
 
         else:
-            logger.info(f"Unknown action {action}")
-            return
+            extraction_result["selected_chunks"] = []
+            extraction_result["selected_text"] = ""
+            extraction_result["response"] = ""
+
+        _publish_result(extraction_result)
+
+        return jsonify(extraction_result), 200
 
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
+        data = request.get_json()
         logger.error(f"chunking with {data} failed with {error_msg}\n{tb}")
 
-        publish_response(data, False, error_msg)
+        # must return 200 in order to indicate the message
+        # has been processed
+        return jsonify({"error": error_msg}), 200
 
 
-@functions_framework.cloud_event
-def resp_processor(cloud_event: CloudEvent):
-    logger.info(f"resp_processor received {cloud_event.data}")
-    data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]))
-    params = data["params"]
-    action = params["action"]
-
-    if action == "chunk_one_filing":
-        req_is_success = data["success"]
-        extract_type = params.get("run_extract")
-        if req_is_success and extract_type:
-            params["action"] = (
-                "extract_trustee_comp"
-                if "trustee" in extract_type
-                else "extract_fundmgr_ownership"
-            )
-            publish_request(params)
-            logger.info(f"publish request for {params}")
-
-
-def _publish_result(data: dict, result: dict):
-    if not result:
-        logger.info(f"No data extracted for {data}")
-        publish_response(data, False, "info not found")
-        return
-
-    extraction_result = {
-        "batch_id": data.get("batch_id", ""),
-        "cik": result.get("cik", ""),
-        "company_name": result.get("company_name", ""),
-        "accession_number": result.get("accession_number", ""),
-        "date_filed": result.get("date_filed", ""),
-        "selected_chunks": result.get("selected_chunks", []),
-        "selected_text": result.get("selected_text", ""),
-        "response": result.get("response", ""),
-        "notes": result.get("notes", ""),
-        "model": data["model"],
-        "extraction_type": data.get("run_extract", ""),
-    }
-
+def _publish_result(result: dict):
     result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
     if result_topic:
-        publish_message(extraction_result, result_topic)
-        message = f"result published to {result_topic}"
+        publish_message(result, result_topic)
+        logger.info(f"result published to {result_topic}")
     else:
-        message = "result discarded"
-
-    logger.info(message)
-    publish_response(data, True, message)
+        logger.info("result discarded")
 
 
 if __name__ == "__main__":
-    pass
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

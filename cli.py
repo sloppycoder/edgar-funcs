@@ -1,4 +1,5 @@
 import argparse
+import os
 import random
 import re
 import string
@@ -9,9 +10,11 @@ from typing import Any, Hashable
 import pandas as pd
 
 from edgar_funcs.edgar import load_filing_catalog
-from func_helpers import (
-    publish_request,
-)
+from func_helpers import publish_message
+
+
+def publish_request(data: dict[str, Any]):
+    publish_message(data, os.getenv("REQUEST_TOPIC", ""))
 
 
 def request_for_chunking(
