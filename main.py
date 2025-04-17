@@ -35,9 +35,9 @@ def req_processor():
         logger.info(f"Received request: {data}")
 
         action = data.get("action")
-        if action not in ["chunk", "trstee", "fundmgr"]:
-            logger.info(f"Unknown action {action}, nothing to do")
-            return jsonify({"message": "Unknown action"}), 200
+        if action not in ["chunk", "trustee", "fundmgr"]:
+            logger.info(f"Unknown action {action}")
+            return jsonify({"message": f"Unknown action: {action}"}), 200
 
         is_reuse, chunks = chunk_filing_and_save_embedding(**data)
         if is_reuse:
