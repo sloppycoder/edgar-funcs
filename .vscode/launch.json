@@ -16,6 +16,7 @@
                 "--embedding-dimension=1536",
                 "--extraction-model=gemini-2.0-flash",
                 "trustee",
+                // "tmp/t.csv"
                 "0001224568-24-000005",
             ]
         },

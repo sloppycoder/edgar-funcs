@@ -18,7 +18,7 @@ def send_test_extraction_result():
         "selected_text": "some_text",
         "response": "{}",
         "notes": "some_notes",
-        "model": "gemini-flash-2.0",
+        "model": "gemini-2.0-flash",
         "extraction_type": "trustee_comp",
     }
     publish_message(extraction_result, os.environ.get("EXTRACTION_RESULT_TOPIC", ""))

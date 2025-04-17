@@ -6,6 +6,8 @@ from datetime import datetime
 from functools import partial
 from typing import Any, Hashable
 
+import pandas as pd
+
 from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import (
     publish_request,
@@ -103,6 +105,13 @@ def parse_cli():
         help="End date in YYYY-MM-DD format (default: 2024-01-01)",
     )
     parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="tmp/processed.csv",
+        help="output file",
+    )
+    parser.add_argument(
         "--embedding-dimension",
         type=int,
         default=768,
@@ -117,16 +126,23 @@ def parse_cli():
     parser.add_argument(
         "--extraction-model",
         type=str,
-        default="gemini-flash-2.0",
-        help="Model to use for extraction (default: gemini-flash-2.0)",
+        default="gemini-2.0-flash",
+        help="Model to use for extraction (default: gemini-2.0-flash)",
     )
     args = parser.parse_args()
 
     if re.match(r"^\d{10}-\d{2}-\d{6}$", args.arg1):
         args.accession_number = args.arg1
         args.percentage = 0
+        args.csv = None
     elif args.arg1.isdigit():
+        args.accession_number = ""
         args.percentage = int(args.arg1)
+        args.csv = None
+    elif args.arg1.endswith(".csv"):
+        args.accession_number = ""
+        args.percentage = 0
+        args.csv = args.arg1
     else:
         parser.error(f"Invalid accession number format: {args.arg1}")
 
@@ -155,7 +171,9 @@ def main():
     )
 
     df_filings = load_filing_catalog(args.start, args.end)
-    if args.percentage:
+    if args.csv:
+        df_todo = pd.read_csv(args.csv)
+    elif args.percentage:
         df_todo = df_filings.sample(frac=float(args.percentage) / 100)
         if len(df_todo) == 0:
             print("No filings to process")
@@ -174,7 +192,7 @@ def main():
     )
     batch_request(
         todo_list=todo_list,
-        output_file="tmp/processed.csv",
+        output_file=args.output,
         request_func=request_func,
     )
 

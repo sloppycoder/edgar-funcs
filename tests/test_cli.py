@@ -4,6 +4,7 @@ from unittest.mock import ANY, patch
 import pytest
 
 from cli import main
+from edgar_funcs.edgar import load_filing_catalog
 
 
 @pytest.fixture
@@ -83,8 +84,14 @@ def test_specific_accession_number(mock_publish_request, monkeypatch):
             "accession_number": "0001224568-24-000005",
             "embedding_model": "text-embedding-005",
             "embedding_dimension": 768,
-            "model": "gemini-flash-2.0",
+            "model": "gemini-2.0-flash",
             "run_extract": "",
             "chunk_algo_version": "4",
         }
     )
+
+
+def test_load_catalog():
+    df_filings = load_filing_catalog("2000-01-01", "2024-12-31")
+    cik1_filings = df_filings[df_filings["cik"] == "1342947"]
+    assert len(cik1_filings) > 0
