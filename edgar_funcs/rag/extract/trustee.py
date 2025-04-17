@@ -147,20 +147,9 @@ def _extract_trustee_comp(
     queries: TextChunksWithEmbedding,
     chunks: TextChunksWithEmbedding,
     model: str,
-) -> TrusteeComp:
+) -> TrusteeComp | None:
     if not chunks.is_ready():
         raise ValueError("embedding data is not ready")
-
-    result: TrusteeComp = {
-        "cik": chunks.metadata.get("cik", ""),
-        "accession_number": chunks.metadata.get("accession_number", ""),
-        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
-        "selected_chunks": [],
-        "selected_text": "",
-        "n_trustee": 0,
-        "response": None,
-        "comp_info": {},
-    }
 
     for method in ["distance", "appearance"]:
         relevant_chunks, relevant_text = _find_relevant_text(
@@ -172,25 +161,29 @@ def _extract_trustee_comp(
         if not relevant_text or len(relevant_text) < 100:
             continue
 
-        result["selected_chunks"] = relevant_chunks
-        result["selected_text"] = relevant_text
-
         # step 4: send the relevant text to the LLM model with designed prompt
         response = _ask_model_about_trustee_comp(model, relevant_text)
         if response:
             try:
-                result["response"] = response
                 comp_info = json.loads(response)
                 n_trustee = len(comp_info["trustees"])
                 if n_trustee > 1:
-                    result["n_trustee"] = n_trustee
-                    result["comp_info"] = comp_info
+                    result: TrusteeComp = {
+                        "cik": chunks.metadata.get("cik", ""),
+                        "accession_number": chunks.metadata.get("accession_number", ""),
+                        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
+                        "selected_chunks": relevant_chunks,
+                        "selected_text": relevant_text,
+                        "n_trustee": n_trustee,
+                        "response": response,
+                        "comp_info": comp_info,
+                    }
                     return result
 
             except json.JSONDecodeError:
                 pass
 
-    return result
+    return None
 
 
 def _find_relevant_text(

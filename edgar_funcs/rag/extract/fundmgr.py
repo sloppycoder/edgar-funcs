@@ -157,19 +157,9 @@ def _extract_fundmgr_ownership(
     queries: TextChunksWithEmbedding,
     chunks: TextChunksWithEmbedding,
     model: str,
-) -> FundManagerOwnership:
+) -> FundManagerOwnership | None:
     if not chunks.is_ready():
         raise ValueError("embedding data is not ready")
-
-    result: FundManagerOwnership = {
-        "cik": chunks.metadata.get("cik", ""),
-        "accession_number": chunks.metadata.get("accession_number", ""),
-        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
-        "selected_chunks": [],
-        "selected_text": "",
-        "response": None,
-        "ownership_info": {},
-    }
 
     for method in ["distance", "top5"]:
         relevant_chunks, relevant_text = _find_relevant_text(
@@ -181,23 +171,27 @@ def _extract_fundmgr_ownership(
         if not relevant_text or len(relevant_text) < 100:
             continue
 
-        result["selected_chunks"] = relevant_chunks
-        result["selected_text"] = relevant_text
-
         # step 4: send the relevant text to the LLM model with designed prompt
         response = _ask_model_about_fundmgr_ownership(model, relevant_text)
         if response:
             try:
                 ownership_info = json.loads(response)
                 if "managers" in ownership_info and len(ownership_info["managers"]) > 0:
-                    result["response"] = response
-                    result["ownership_info"] = ownership_info
+                    result: FundManagerOwnership = {
+                        "cik": chunks.metadata.get("cik", ""),
+                        "accession_number": chunks.metadata.get("accession_number", ""),
+                        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
+                        "selected_chunks": relevant_chunks,
+                        "selected_text": relevant_text,
+                        "response": response,
+                        "ownership_info": ownership_info,
+                    }
                     return result
 
             except json.JSONDecodeError:
                 pass
 
-    return result
+    return None
 
 
 def _find_relevant_text(
