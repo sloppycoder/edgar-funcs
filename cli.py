@@ -38,16 +38,15 @@ def request_for_chunking(
         "chunk_algo_version": "4",
     }
     publish_request(data)
-    print(
-        f"chunking: {run_extract}, batch_id={batch_id}, filing={cik}/{accession_number}, "  # noqa E501
-    )
+    print(f"chunking: {run_extract}, filing={cik}/{accession_number}, ")
     return data
 
 
-def batch_request(todo_list: list[dict[Hashable, Any]], output_file: str, request_func):
+def batch_request(todo_list: list[dict[Hashable, Any]], request_func):
     batch_id = _batch_id()
     n_total, n_processed = len(todo_list), 0
 
+    output_file = f"tmp/{batch_id}.csv"
     with open(output_file, "w") as f:
         f.write("batch_id,cik,company_name,accession_number\n")
         for row in todo_list:
@@ -105,13 +104,6 @@ def parse_cli():
         help="End date in YYYY-MM-DD format (default: 2024-01-01)",
     )
     parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="tmp/processed.csv",
-        help="output file",
-    )
-    parser.add_argument(
         "--embedding-dimension",
         type=int,
         default=768,
@@ -132,17 +124,11 @@ def parse_cli():
     args = parser.parse_args()
 
     if re.match(r"^\d{10}-\d{2}-\d{6}$", args.arg1):
-        args.accession_number = args.arg1
-        args.percentage = 0
-        args.csv = None
+        args.mode = "accession_number"
     elif args.arg1.isdigit():
-        args.accession_number = ""
-        args.percentage = int(args.arg1)
-        args.csv = None
+        args.mode = "sample"
     elif args.arg1.endswith(".csv"):
-        args.accession_number = ""
-        args.percentage = 0
-        args.csv = args.arg1
+        args.mode = "list"
     else:
         parser.error(f"Invalid accession number format: {args.arg1}")
 
@@ -171,17 +157,17 @@ def main():
     )
 
     df_filings = load_filing_catalog(args.start, args.end)
-    if args.csv:
-        df_todo = pd.read_csv(args.csv)
-    elif args.percentage:
-        df_todo = df_filings.sample(frac=float(args.percentage) / 100)
+    if args.mode == "list":
+        df_todo = pd.read_csv(args.arg1)
+    elif args.mode == "sample":
+        df_todo = df_filings.sample(frac=float(args.arg1) / 100)
         if len(df_todo) == 0:
             print("No filings to process")
             return
-    elif args.accession_number:
-        df_todo = df_filings[df_filings["accession_number"] == args.accession_number]
+    elif args.mode == "accession_number":
+        df_todo = df_filings[df_filings["accession_number"] == args.arg1]
         if df_todo.empty:
-            print(f"Accession number {args.accession_number} not found in the catalog.")
+            print(f"Accession number {args.arg1} not found in the catalog.")
             return
     else:
         print("No accession number or percentage provided")
@@ -192,7 +178,6 @@ def main():
     )
     batch_request(
         todo_list=todo_list,
-        output_file=args.output,
         request_func=request_func,
     )
 
