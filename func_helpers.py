@@ -28,16 +28,11 @@ def create_publisher():
         return pubsub_v1.PublisherClient()  # Use default credentials
 
 
-def google_cloud_credentials(
-    scopes: list[str],
-    audience: str = "",
-) -> service_account.Credentials | None:
+def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials | None:
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if credentials_path and os.path.isfile(credentials_path):
         return service_account.Credentials.from_service_account_file(
-            credentials_path,
-            scopes=scopes,
-            target_audience=audience,
+            credentials_path, scopes=scopes
         )
     else:
         return None
