@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import os
@@ -5,6 +6,7 @@ from functools import lru_cache
 
 import google.auth
 from dotenv import load_dotenv
+from flask import Request
 from google.cloud import logging as cloud_logging
 from google.cloud import pubsub_v1
 from google.oauth2 import service_account
@@ -70,3 +72,19 @@ def publish_message(message: dict, topic_name: str):
         )
     else:
         logging.info(f"Invalid topic {topic_name} or project {gcp_proj_id}")
+
+
+def decode_request(request: Request) -> tuple[dict | None, dict | None]:
+    """
+    unwrap the http request sent by Pub/Sub push subscription
+    return tuple of (headers, data) if successful, None otherwise
+    """
+    envelope = request.get_json()
+    if not envelope or "message" not in envelope:
+        return None, None
+
+    pubsub_message = envelope["message"]
+    decoded_data = base64.b64decode(pubsub_message["data"]).decode("utf-8")
+    data = json.loads(decoded_data)
+    # headers are not needed for not, so  not implemented
+    return {}, data

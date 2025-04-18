@@ -1,5 +1,3 @@
-import base64
-import json
 import logging
 import os
 import traceback
@@ -10,6 +8,7 @@ from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filin
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 from func_helpers import (
+    decode_request,
     publish_message,
     setup_cloud_logging,
 )
@@ -24,15 +23,10 @@ app = Flask(__name__)
 def req_processor():
     try:
         # Handle Pub/Sub push subscription message
-        envelope = request.get_json()
-        if not envelope or "message" not in envelope:
+        _, data = decode_request(request)
+        if not data:
             logger.error("No Pub/Sub message received.")
             return jsonify({"error": "No Pub/Sub message received."}), 400
-
-        pubsub_message = envelope["message"]
-        decoded_data = base64.b64decode(pubsub_message["data"]).decode("utf-8")
-        data = json.loads(decoded_data)
-        logger.info(f"Received request: {data}")
 
         action = data.get("action")
         if action not in ["chunk", "trustee", "fundmgr"]:
