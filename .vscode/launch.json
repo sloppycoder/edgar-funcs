@@ -15,7 +15,7 @@
                 "--embedding-model=text-embedding-3-small",
                 "--embedding-dimension=1536",
                 "--extraction-model=gemini-2.0-flash",
-                "trustee",
+                "fundmgr",
                 // "tmp/t.csv"
                 "0001224568-24-000005",
             ]

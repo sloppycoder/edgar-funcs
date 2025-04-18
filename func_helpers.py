@@ -5,6 +5,7 @@ import os
 from functools import lru_cache
 
 import google.auth
+import requests
 from dotenv import load_dotenv
 from flask import Request
 from google.cloud import logging as cloud_logging
@@ -27,12 +28,32 @@ def create_publisher():
         return pubsub_v1.PublisherClient()  # Use default credentials
 
 
-def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials | None:
+def google_cloud_credentials(
+    scopes: list[str],
+    audience: str = "",
+) -> service_account.Credentials | None:
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if credentials_path and os.path.isfile(credentials_path):
         return service_account.Credentials.from_service_account_file(
-            credentials_path, scopes=scopes
+            credentials_path,
+            scopes=scopes,
+            target_audience=audience,
         )
+    else:
+        return None
+
+
+def google_cloud_id_token(
+    audience: str,
+) -> str | None:
+    credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if credentials_path and os.path.isfile(credentials_path):
+        credentials = service_account.IDTokenCredentials.from_service_account_file(
+            credentials_path,
+            target_audience=audience,
+        )
+        credentials.refresh(google.auth.transport.requests.Request())  # pyright: ignore
+        return credentials.token
     else:
         return None
 
@@ -88,3 +109,27 @@ def decode_request(request: Request) -> tuple[dict | None, dict | None]:
     data = json.loads(decoded_data)
     # headers are not needed for not, so  not implemented
     return {}, data
+
+
+def send_cloud_run_request(url: str, payload: dict):
+    """
+    Sends a POST request to a Cloud Run HTTP endpoint with a JSON payload.
+    Ensures the request is authenticated using default Google Cloud credentials.
+    """
+    auth_token = google_cloud_id_token(audience=url)
+    if not auth_token:
+        raise ValueError("No access token available after refreshing credentials.")
+
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json",
+    }
+
+    payload_bytes = json.dumps(payload).encode("utf-8")
+    pubsub_like_payload = {
+        "message": {"data": base64.b64encode(payload_bytes).decode("utf-8")},
+    }
+    response = requests.post(url, headers=headers, json=pubsub_like_payload)
+    if response.status_code == 200:
+        return response.json()
+    raise ValueError(f"response status {response.status_code}\n{response.text}")

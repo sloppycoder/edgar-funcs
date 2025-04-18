@@ -10,10 +10,16 @@ from typing import Any, Hashable
 import pandas as pd
 
 from edgar_funcs.edgar import load_filing_catalog
-from func_helpers import publish_message
+from func_helpers import publish_message, send_cloud_run_request
 
 
-def send_request(
+def _batch_id() -> str:
+    tstamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    suffix = "".join(random.choices(string.ascii_lowercase, k=3))
+    return f"{tstamp}-{suffix}"
+
+
+def _request_payload(
     action: str,
     batch_id: str,
     cik: str,
@@ -23,7 +29,7 @@ def send_request(
     embedding_dimension: int,
     extraction_model: str,
 ):
-    data = {
+    return {
         "batch_id": batch_id,
         "action": action,
         "cik": cik,
@@ -34,12 +40,9 @@ def send_request(
         "model": extraction_model,
         "chunk_algo_version": "4",
     }
-    publish_message(data, os.getenv("REQUEST_TOPIC", ""))
-    print(f"{action}: filing={cik}/{accession_number}")
-    return data
 
 
-def batch_request(todo_list: list[dict[Hashable, Any]], request_func):
+def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
     batch_id = _batch_id()
     n_total, n_processed = len(todo_list), 0
 
@@ -51,24 +54,20 @@ def batch_request(todo_list: list[dict[Hashable, Any]], request_func):
             accession_number = str(row["accession_number"])
             company_name = row["company_name"].strip()  # pyright: ignore
             f.write(f"{batch_id},{cik},{company_name},{accession_number}\n")
-            request_func(
+            data = payload_func(
                 batch_id=batch_id,
                 cik=cik,
                 company_name=company_name,
                 accession_number=accession_number,
             )
+            publish_message(data, os.getenv("REQUEST_TOPIC", ""))
+            print(f"filing={cik}/{accession_number}")
 
             n_processed += 1
 
     print(
         f"Requested {n_processed} filings out of {n_total}, list saved to {output_file}"
     )
-
-
-def _batch_id() -> str:
-    tstamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    suffix = "".join(random.choices(string.ascii_lowercase, k=3))
-    return f"{tstamp}-{suffix}"
 
 
 def parse_cli():
@@ -135,8 +134,8 @@ def parse_cli():
 def main():
     args = parse_cli()
 
-    request_func = partial(
-        send_request,
+    payload_func = partial(
+        _request_payload,
         action=args.command,
         embedding_model=args.embedding_model,
         embedding_dimension=args.embedding_dimension,
@@ -160,13 +159,19 @@ def main():
         print("No accession number or percentage provided")
         return
 
-    todo_list = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
+    todo_list: [str, Any] = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
         orient="records"
     )
-    batch_request(
-        todo_list=todo_list,
-        request_func=request_func,
-    )
+    if len(todo_list) > 1:
+        batch_request(
+            todo_list=todo_list,
+            payload_func=payload_func,
+        )
+    else:
+        url = os.getenv("EDGAR_PROCESSOR_URL", "")
+        todo_list[0]["batch_id"] = "single"
+        result = send_cloud_run_request(url, payload_func(**todo_list[0]))
+        print(f"response->\n{result['response']}")
 
 
 if __name__ == "__main__":

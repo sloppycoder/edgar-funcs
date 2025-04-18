@@ -13,19 +13,28 @@ def mock_publish_request():
         yield mock
 
 
-def test_chunk_accession_number(mock_publish_request, monkeypatch):
+@pytest.fixture
+def mock_send_cloud_run_request():
+    with patch("cli.send_cloud_run_request") as mock:
+        yield mock
+
+
+def test_chunk_accession_number(
+    mock_publish_request,
+    mock_send_cloud_run_request,
+    monkeypatch,
+):
     monkeypatch.setattr(
         "sys.argv",
         shlex.split("cli.py chunk 0001224568-24-000005"),
     )
     main()
-    assert mock_publish_request.call_count > 0
-    for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "chunk"
-        assert call_args[0][0]["accession_number"] == "0001224568-24-000005"
-    mock_publish_request.assert_called_once_with(
+    assert mock_publish_request.call_count == 0
+    assert mock_send_cloud_run_request.call_count == 1
+    mock_send_cloud_run_request.assert_called_once_with(
+        ANY,
         {
-            "batch_id": ANY,
+            "batch_id": "single",
             "action": "chunk",
             "cik": "1224568",
             "company_name": ANY,
@@ -35,7 +44,6 @@ def test_chunk_accession_number(mock_publish_request, monkeypatch):
             "model": "gemini-2.0-flash",
             "chunk_algo_version": "4",
         },
-        ANY,
     )
 
 
