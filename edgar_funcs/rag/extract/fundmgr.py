@@ -171,7 +171,6 @@ def _extract_fundmgr_ownership(
         if not relevant_text or len(relevant_text) < 100:
             continue
 
-        # step 4: send the relevant text to the LLM model with designed prompt
         response = _ask_model_about_fundmgr_ownership(model, relevant_text)
         if response:
             try:

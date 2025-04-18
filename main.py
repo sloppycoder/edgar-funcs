@@ -28,6 +28,8 @@ def req_processor():
             logger.error("No Pub/Sub message received.")
             return jsonify({"error": "No Pub/Sub message received."}), 400
 
+        logger.info(f"Received request for {data}")
+
         action = data.get("action")
         if action not in ["chunk", "trustee", "fundmgr"]:
             logger.info(f"Unknown action {action}")
@@ -44,9 +46,12 @@ def req_processor():
             "cik": data.get("cik", "0"),
             "company_name": data.get("company_name", "test company"),
             "accession_number": data.get("accession_number", "0000000000-00-000000"),
-            "date_filed": data.get("date_filed", "1971-01-01"),
+            "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
             "model": data["model"],
             "extraction_type": action,
+            "selected_chunks": [],
+            "selected_text": "N/A",
+            "response": "N/A",
         }
 
         if action == "trustee":
@@ -90,12 +95,13 @@ def req_processor():
 
 
 def _publish_result(result: dict):
+    id = f"{result['action']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
     result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
     if result_topic:
         publish_message(result, result_topic)
-        logger.info(f"result published to {result_topic}")
+        logger.info(f"result for {id} published to {result_topic}")
     else:
-        logger.info("result discarded")
+        logger.info(f"result for {id} discarded")
 
 
 if __name__ == "__main__":

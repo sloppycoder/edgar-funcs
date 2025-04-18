@@ -32,8 +32,8 @@ class TextChunksWithEmbedding:
         texts: list[str],
         embeddings: list[list[float]] = [],
         metadata={
+            "cik": "",
             "accession_number": "",
-            "date_filed": "",
             "model": "",
             "dimension": 0,
             "chunk_algo_version": "0",
