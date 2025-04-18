@@ -13,32 +13,51 @@ def mock_publish_request():
         yield mock
 
 
-def test_chunk_command(mock_publish_request, monkeypatch):
+def test_chunk_accession_number(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
-        "sys.argv", shlex.split("cli.py chunk 1 --start 2024-01-01 --end 2024-12-31")
+        "sys.argv",
+        shlex.split("cli.py chunk 0001224568-24-000005"),
     )
     main()
     assert mock_publish_request.call_count > 0
     for call_args in mock_publish_request.call_args_list:
         assert call_args[0][0]["action"] == "chunk"
+        assert call_args[0][0]["accession_number"] == "0001224568-24-000005"
+    mock_publish_request.assert_called_once_with(
+        {
+            "batch_id": ANY,
+            "action": "chunk",
+            "cik": "1224568",
+            "company_name": ANY,
+            "accession_number": "0001224568-24-000005",
+            "embedding_model": "text-embedding-005",
+            "embedding_dimension": 768,
+            "model": "gemini-2.0-flash",
+            "chunk_algo_version": "4",
+        },
+        ANY,
+    )
 
 
-def test_trustee_command(mock_publish_request, monkeypatch):
+def test_trustee_sample(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
-        "sys.argv", shlex.split("cli.py trustee 50 --start 2024-01-01 --end 2024-12-31")
+        "sys.argv", shlex.split("cli.py trustee 1 --start 2024-01-01 --end 2024-12-31")
     )
     main()
-    assert mock_publish_request.call_count > 0
+    assert mock_publish_request.call_count >= 13 and mock_publish_request.call_count <= 15
     for call_args in mock_publish_request.call_args_list:
         assert call_args[0][0]["action"] == "trustee"
 
 
-def test_fundmgr_command(mock_publish_request, monkeypatch):
+def test_fundmgr_list(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
-        "sys.argv", shlex.split("cli.py fundmgr 50 --start 2024-01-01 --end 2024-12-31")
+        "sys.argv",
+        shlex.split(
+            "cli.py fundmgr tests/mockdata/cli/filing_list.csv --start 2024-01-01 --end 2024-12-31"  # noqa E501
+        ),
     )
     main()
-    assert mock_publish_request.call_count > 0
+    assert mock_publish_request.call_count == 4
     for call_args in mock_publish_request.call_args_list:
         assert call_args[0][0]["action"] == "fundmgr"
 
@@ -64,28 +83,6 @@ def test_non_existent_accession_number(mock_publish_request, monkeypatch):
     )
     main()
     mock_publish_request.assert_not_called()
-
-
-def test_specific_accession_number(mock_publish_request, monkeypatch):
-    monkeypatch.setattr(
-        "sys.argv",
-        shlex.split("cli.py chunk 0001224568-24-000005"),
-    )
-    main()
-    mock_publish_request.assert_called_once_with(
-        {
-            "batch_id": ANY,
-            "action": "chunk",
-            "cik": "1224568",
-            "company_name": ANY,
-            "accession_number": "0001224568-24-000005",
-            "embedding_model": "text-embedding-005",
-            "embedding_dimension": 768,
-            "model": "gemini-2.0-flash",
-            "chunk_algo_version": "4",
-        },
-        ANY,
-    )
 
 
 def test_load_catalog():
