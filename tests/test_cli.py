@@ -81,6 +81,13 @@ def test_invalid_accession_number(mock_publish_request, monkeypatch):
     mock_publish_request.assert_not_called()
 
 
+def test_print_stats(monkeypatch):
+    monkeypatch.setattr("sys.argv", shlex.split("cli.py stats 20250420142007-lgh"))
+    with patch("cli.print_stats") as mock:
+        main()
+    mock.assert_called_once_with("20250420142007-lgh")
+
+
 def test_non_existent_accession_number(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
         "sys.argv",

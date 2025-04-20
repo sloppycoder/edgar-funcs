@@ -72,7 +72,7 @@ def _request_payload(
     }
 
 
-def _count_results(batch_id: str) -> int:
+def print_stats(batch_id: str):
     """
     Count the number of records in a Firestore collection filtered by batch_id.
     """
@@ -81,8 +81,23 @@ def _count_results(batch_id: str) -> int:
     query = db.collection(collection_name).where(
         filter=FieldFilter("batch_id", "==", batch_id)
     )
-    result = query.count().get()
-    return result[0][0].value
+
+    total_docs = 0
+    unique_docs = set()
+    n_empty = 0
+
+    for result in query.stream():
+        total_docs += 1
+        accession_number = result.get("accession_number")
+        unique_docs.add(accession_number)
+        if len(result.get("selected_chunks")) == 0:
+            n_empty += 1
+
+    n_uniq = len(unique_docs)
+    extract_ratio = (n_uniq - n_empty) / n_uniq
+    print(
+        f"{batch_id}: uniq/total/empty: {total_docs}/{n_uniq}/{n_empty}, {extract_ratio:.2f}"  # noqa: E501
+    )
 
 
 def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
@@ -122,7 +137,7 @@ def parse_cli():
             "chunk",
             "trustee",
             "fundmgr",
-            "count",
+            "stats",
         ],
         help="Command to execute: chunk, trustee or fundmgr",
     )
@@ -170,8 +185,8 @@ def parse_cli():
     elif args.arg1.endswith(".csv"):
         args.mode = "list"
     else:
-        if args.command == "count":
-            args.mode = "count"
+        if args.command == "stats":
+            args.mode = "stats"
         else:
             parser.error("Invalid accession number {args.arg1}")
 
@@ -181,10 +196,8 @@ def parse_cli():
 def main():
     args = parse_cli()
 
-    if args.command == "count":
-        batch_id = args.arg1
-        n_results = _count_results(batch_id)
-        print(f"{n_results} found for {batch_id}")
+    if args.command == "stats":
+        print_stats(args.arg1)
         return
 
     payload_func = partial(
