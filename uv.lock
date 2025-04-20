@@ -294,7 +294,6 @@ dependencies = [
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-firestore" },
     { name = "google-cloud-logging" },
-    { name = "google-cloud-pubsub" },
     { name = "html2text" },
     { name = "openai" },
     { name = "pandas" },
@@ -309,6 +308,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "google-cloud-pubsub" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -327,7 +327,6 @@ requires-dist = [
     { name = "google-cloud-aiplatform", specifier = ">=1.84.0" },
     { name = "google-cloud-firestore", specifier = ">=2.20.2" },
     { name = "google-cloud-logging", specifier = ">=3.11.4" },
-    { name = "google-cloud-pubsub", specifier = ">=2.29.0" },
     { name = "html2text", specifier = ">=2024.2.26" },
     { name = "openai", specifier = ">=1.66.3" },
     { name = "pandas", specifier = ">=2.2.3" },
@@ -342,6 +341,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "google-cloud-pubsub", specifier = ">=2.29.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = "==1.1.399" },
     { name = "pytest", specifier = ">=8.3.0" },

@@ -23,7 +23,6 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "flask>=2.3.3",
     "google-cloud-firestore>=2.20.2",
-    "google-cloud-pubsub>=2.29.0",
 ]
 
 
@@ -37,6 +36,7 @@ dev = [
     "pre-commit >= 4.0.1",
     "ruff >= 0.9.6",
     "pyright==1.1.399",
+    "google-cloud-pubsub>=2.29.0",
 ]
 
 [tool.setuptools]

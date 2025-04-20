@@ -42,9 +42,7 @@ cymem==2.0.11
     #   spacy
     #   thinc
 deprecated==1.2.18
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
+    # via opentelemetry-api
 distro==1.9.0
     # via openai
 docstring-parser==0.16
@@ -61,7 +59,6 @@ google-api-core==2.24.2
     #   google-cloud-core
     #   google-cloud-firestore
     #   google-cloud-logging
-    #   google-cloud-pubsub
     #   google-cloud-resource-manager
     #   google-cloud-storage
 google-auth==2.38.0
@@ -73,7 +70,6 @@ google-auth==2.38.0
     #   google-cloud-core
     #   google-cloud-firestore
     #   google-cloud-logging
-    #   google-cloud-pubsub
     #   google-cloud-resource-manager
     #   google-cloud-storage
 google-cloud-aiplatform==1.84.0
@@ -93,8 +89,6 @@ google-cloud-core==2.4.3
 google-cloud-firestore==2.20.2
     # via edgar-funcs (pyproject.toml)
 google-cloud-logging==3.11.4
-    # via edgar-funcs (pyproject.toml)
-google-cloud-pubsub==2.29.0
     # via edgar-funcs (pyproject.toml)
 google-cloud-resource-manager==1.14.2
     # via google-cloud-aiplatform
@@ -117,19 +111,15 @@ googleapis-common-protos==1.69.2
 grpc-google-iam-v1==0.14.2
     # via
     #   google-cloud-logging
-    #   google-cloud-pubsub
     #   google-cloud-resource-manager
 grpcio==1.71.0
     # via
     #   google-api-core
-    #   google-cloud-pubsub
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
 grpcio-status==1.71.0
-    # via
-    #   google-api-core
-    #   google-cloud-pubsub
+    # via google-api-core
 h11==0.14.0
     # via httpcore
 html2text==2024.2.26
@@ -184,15 +174,7 @@ numpy==2.2.4
 openai==1.66.3
     # via edgar-funcs (pyproject.toml)
 opentelemetry-api==1.31.0
-    # via
-    #   google-cloud-logging
-    #   google-cloud-pubsub
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.31.0
-    # via google-cloud-pubsub
-opentelemetry-semantic-conventions==0.52b0
-    # via opentelemetry-sdk
+    # via google-cloud-logging
 packaging==24.2
     # via
     #   google-cloud-aiplatform
@@ -213,7 +195,6 @@ proto-plus==1.26.1
     #   google-cloud-appengine-logging
     #   google-cloud-firestore
     #   google-cloud-logging
-    #   google-cloud-pubsub
     #   google-cloud-resource-manager
 protobuf==5.29.3
     # via
@@ -223,7 +204,6 @@ protobuf==5.29.3
     #   google-cloud-audit-log
     #   google-cloud-firestore
     #   google-cloud-logging
-    #   google-cloud-pubsub
     #   google-cloud-resource-manager
     #   googleapis-common-protos
     #   grpc-google-iam-v1
@@ -325,7 +305,6 @@ typing-extensions==4.12.2
     #   beautifulsoup4
     #   google-cloud-aiplatform
     #   openai
-    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typer
