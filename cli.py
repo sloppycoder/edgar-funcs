@@ -100,10 +100,19 @@ def print_stats(batch_id: str):
             non_empty_cik.add(result.get("cik"))
 
     n_docs = len(uniq_docs)
-    doc_ratio = (n_docs - n_empty) / n_docs
-    cik_ratio = len(non_empty_cik) / len(uniq_cik)
+
+    try:
+        doc_ratio = (n_docs - n_empty) / n_docs
+    except ZeroDivisionError:
+        doc_ratio = 0.0
+    try:
+        cik_ratio = len(non_empty_cik) / len(uniq_cik)
+    except ZeroDivisionError:
+        cik_ratio = 0.0
+
     print(
-        f"batch_id={batch_id}: uniq/total/empty: {total_docs}/{n_docs}/{n_empty}, cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "  # noqa: E501
+        f"batch_id={batch_id}: uniq/total/empty: {total_docs}/{n_docs}/{n_empty}, "
+        + f"cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "
     )
 
 
