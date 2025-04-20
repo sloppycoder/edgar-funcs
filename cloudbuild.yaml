@@ -58,7 +58,7 @@ steps:
           --concurrency=1 \
           --max-instances=50 \
           --cpu=2 \
-          --memory=1.5Gi \
+          --memory=2Gi \
           --timeout=900s \
           --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET} \
           --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_COLLECTION=${_EXTRACTION_RESULT_COLLECTION}
