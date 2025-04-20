@@ -31,7 +31,7 @@ def req_processor():
 
         logger.info(f"Received request for {data}")
 
-        job_id = f"{data['batch_id']}/{data['cik']}/{data['accession_number']}"
+        job_id = f"{data['batch_id']}|{data['cik']}|{data['accession_number']}"
         if not mark_job_in_progress(job_id):
             logger.info(f"Job {job_id} is already in progress, skipping.")
             return jsonify(
