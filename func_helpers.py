@@ -152,3 +152,25 @@ def mark_job_in_progress(
 
     transaction = db.transaction()
     return transaction_logic(transaction)
+
+
+def mark_job_done(job_id: str, collection_name: str = "jobs_in_progress") -> bool:
+    """
+    Marks a job as done by deleting its document from the specified Firestore collection.
+    If the document does not exist, it handles the exception gracefully.
+
+    Args:
+        job_id (str): The unique identifier for the job.
+        collection_name (str): The Firestore collection name.
+
+    Returns:
+        bool: True if the document was deleted, False if it did not exist.
+    """
+    db = firestore.Client()
+    doc_ref = db.collection(collection_name).document(job_id)
+
+    try:
+        doc_ref.delete()
+        return True
+    except NotFound:
+        return False

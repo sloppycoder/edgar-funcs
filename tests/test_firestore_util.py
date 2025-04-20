@@ -3,7 +3,7 @@ import uuid
 import pytest  # noqa F401
 
 from cli import _batch_id
-from func_helpers import mark_job_in_progress
+from func_helpers import mark_job_done, mark_job_in_progress
 from main import _publish_result
 
 
@@ -30,3 +30,4 @@ def test_mark_job_in_progress():
     job_id = str(uuid.uuid4())
     assert mark_job_in_progress(job_id)
     assert mark_job_in_progress(job_id) is False
+    assert mark_job_done(job_id)

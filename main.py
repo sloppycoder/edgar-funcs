@@ -10,6 +10,7 @@ from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 from func_helpers import (
     decode_request,
     insert_into_firestore,
+    mark_job_done,
     mark_job_in_progress,
     setup_cloud_logging,
 )
@@ -31,6 +32,11 @@ def req_processor():
 
         logger.info(f"Received request for {data}")
 
+        action = data.get("action")
+        if action not in ["chunk", "trustee", "fundmgr"]:
+            logger.info(f"Unknown action {action}")
+            return jsonify({"message": f"Unknown action: {action}"}), 200
+
         job_id = f"{data['batch_id']}|{data['cik']}|{data['accession_number']}"
         if not mark_job_in_progress(job_id):
             logger.info(f"Job {job_id} is already in progress, skipping.")
@@ -38,11 +44,7 @@ def req_processor():
                 {"message": f"Job {job_id} is already in progress, skipping."}
             ), 200
 
-        action = data.get("action")
-        if action not in ["chunk", "trustee", "fundmgr"]:
-            logger.info(f"Unknown action {action}")
-            return jsonify({"message": f"Unknown action: {action}"}), 200
-
+        # step 1: chunk the filing and save the embedding always
         is_reuse, chunks = chunk_filing_and_save_embedding(**data)
         if is_reuse:
             logger.info(f"re-use existing {len(chunks.texts)} chunks for {data}")
@@ -62,6 +64,7 @@ def req_processor():
             "response": "N/A",
         }
 
+        # step2: perform =extraction if action is trustee or fundmgr
         if action == "trustee":
             result = extract_trustee_comp_from_filing(**data)
             if result:
@@ -87,7 +90,12 @@ def req_processor():
             extraction_result["selected_text"] = ""
             extraction_result["response"] = ""
 
+        # step 3: save the extraction result
         _publish_result(extraction_result)
+
+        # step 4: delete the job marker.
+        # this will allow redelivery attempt to be processed
+        mark_job_done(job_id)
 
         return jsonify(extraction_result), 200
 
