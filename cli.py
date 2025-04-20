@@ -88,9 +88,11 @@ def print_stats(batch_id: str):
     uniq_cik = set()
     non_empty_cik = set()
     n_empty = 0
+    extraction_type = ""
 
     for result in query.stream():
         total_docs += 1
+        extraction_type = result.get("extraction_type")
         accession_number = result.get("accession_number")
         uniq_docs.add(accession_number)
         uniq_cik.add(result.get("cik"))
@@ -111,7 +113,8 @@ def print_stats(batch_id: str):
         cik_ratio = 0.0
 
     print(
-        f"batch_id={batch_id}: uniq/total/empty: {total_docs}/{n_docs}/{n_empty}, "
+        f"{batch_id} {extraction_type}: "
+        + f"total/uniq/empty: {total_docs}/{n_docs}/{n_empty}, "
         + f"cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "
     )
 
