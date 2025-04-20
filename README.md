@@ -6,3 +6,6 @@ For 485BPOS filings:
 * Split a filing into mutliple text chunks and generate embeddings
 * Extract information from a filing using a LLM with RAG (Retrieval Augmented Generation)
 
+## architecture
+* Requests are published into Pub/Sub topic, a push subscription triggers the Cloud Run HTTP Endpooint, the result is written into Firestore collection.
+*
