@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+import openai
 import tiktoken
 from google.api_core.exceptions import GoogleAPICallError, ServerError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -131,6 +132,8 @@ def _call_openai_embedding_api(input_: list[str], model: str) -> list[list[float
         client = openai_client()
         response = client.embeddings.create(input=input_, model=model)
         return [item.embedding for item in response.data]
+    except openai.RateLimitError as e:
+        raise RetriableServerError(e)
     except httpx.HTTPStatusError as e:
         if e.response.status_code >= 500:
             raise RetriableServerError(e)
