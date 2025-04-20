@@ -8,6 +8,7 @@ import google.auth
 import requests
 from dotenv import load_dotenv
 from flask import Request
+from google.api_core.exceptions import NotFound
 from google.cloud import firestore
 from google.cloud import logging as cloud_logging
 from google.oauth2 import service_account
@@ -113,7 +114,7 @@ def insert_into_firestore(collection_name: str, data: dict):
 
 
 def mark_job_in_progress(
-    job_id: str, collection_name: str = "filings_in_progress", ttl_hours: int = 24
+    job_id: str, collection_name: str = "jobs_in_progress", ttl_hours: int = 24
 ) -> bool:
     """
     Marks a filing as in progress by inserting it into the specified Firestore collection.
@@ -129,22 +130,25 @@ def mark_job_in_progress(
         ttl_hours (int): Time-to-Live in hours for the document.
     """
     db = firestore.Client()
-    collection_ref = db.collection(collection_name)
+    doc_ref = db.collection(collection_name).document(job_id)
 
-    # Use a Firestore transaction for atomicity
-    def transaction_operation(transaction):
-        doc_ref = collection_ref.document(job_id)
-        doc_snapshot = doc_ref.get(transaction=transaction)
-        if doc_snapshot.exists:
-            return False
+    @firestore.transactional
+    def transaction_logic(transaction):
+        try:
+            doc_snapshot = doc_ref.get(transaction=transaction)
+            if doc_snapshot.exists:
+                return False
+        except NotFound:
+            pass
+
         transaction.set(
             doc_ref,
             {
-                "job_id": job_id,
+                "id": job_id,
                 "expires_at": datetime.utcnow() + timedelta(hours=ttl_hours),
             },
         )
         return True
 
     transaction = db.transaction()
-    return transaction_operation(transaction)
+    return transaction_logic(transaction)
