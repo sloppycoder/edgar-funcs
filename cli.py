@@ -9,7 +9,8 @@ from functools import partial
 from typing import Any, Hashable
 
 import pandas as pd
-from google.cloud import pubsub_v1
+from google.cloud import firestore, pubsub_v1
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import (
@@ -37,8 +38,7 @@ def _publish_message(message: dict, topic_name: str):
 
         content = json.dumps(message).encode("utf-8")
         future = publisher.publish(topic_path, content)
-        message_id = future.result()  # Ensure the publish succeeds
-        print(f"Published message ID {message_id} to {topic_name} with content {content}")
+        future.result()  # Ensure the publish succeeds
     else:
         print(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
@@ -70,6 +70,19 @@ def _request_payload(
         "model": extraction_model,
         "chunk_algo_version": "4",
     }
+
+
+def _count_results(batch_id: str) -> int:
+    """
+    Count the number of records in a Firestore collection filtered by batch_id.
+    """
+    db = firestore.Client()
+    collection_name = os.getenv("EXTRACTION_RESULT_COLLECTION", "extraction_result")
+    query = db.collection(collection_name).where(
+        filter=FieldFilter("batch_id", "==", batch_id)
+    )
+    result = query.count().get()
+    return result[0][0].value
 
 
 def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
@@ -109,6 +122,7 @@ def parse_cli():
             "chunk",
             "trustee",
             "fundmgr",
+            "count",
         ],
         help="Command to execute: chunk, trustee or fundmgr",
     )
@@ -156,13 +170,22 @@ def parse_cli():
     elif args.arg1.endswith(".csv"):
         args.mode = "list"
     else:
-        parser.error(f"Invalid accession number format: {args.arg1}")
+        if args.command == "count":
+            args.mode = "count"
+        else:
+            parser.error("Invalid accession number {args.arg1}")
 
     return args
 
 
 def main():
     args = parse_cli()
+
+    if args.command == "count":
+        batch_id = args.arg1
+        n_results = _count_results(batch_id)
+        print(f"{n_results} found for {batch_id}")
+        return
 
     payload_func = partial(
         _request_payload,
