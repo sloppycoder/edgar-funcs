@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import google.auth
 import requests
@@ -145,7 +145,7 @@ def mark_job_in_progress(
             doc_ref,
             {
                 "id": job_id,
-                "expires_at": datetime.utcnow() + timedelta(hours=ttl_hours),
+                "expires_at": datetime.now(UTC) + timedelta(hours=ttl_hours),
             },
         )
         return True
