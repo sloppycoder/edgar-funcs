@@ -19,8 +19,8 @@ gcloud pubsub subscriptions create edgarai-request-trigger \
   --message-retention-duration=7d \
   --dead-letter-topic=$DLQ_TOPIC \
   --max-delivery-attempts=5 \
-  --retry-policy-minimum-backoff=60s \
-  --retry-policy-maximum-backoff=600s \
+  --min-retry-delay=60s \
+  --max-retry-delay=600s \
   --expiration-period=7d
 
 gcloud pubsub subscriptions list
