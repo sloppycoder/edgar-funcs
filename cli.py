@@ -125,7 +125,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
                 accession_number=accession_number,
             )
             _publish_message(data, os.getenv("REQUEST_TOPIC", ""))
-            print(f"filing={cik}/{accession_number}")
+            print(f"filing={cik:>10}/{accession_number}")
 
             n_processed += 1
 
