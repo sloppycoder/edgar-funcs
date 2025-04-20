@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 import os
 import random
@@ -111,13 +112,22 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
     n_total, n_processed = len(todo_list), 0
 
     output_file = f"tmp/{batch_id}.csv"
-    with open(output_file, "w") as f:
-        f.write("batch_id,cik,company_name,accession_number\n")
+    with open(output_file, "w", newline="") as f:
+        fieldnames = ["batch_id", "cik", "company_name", "accession_number"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+        writer.writeheader()
         for row in todo_list:
             cik = str(row["cik"])
             accession_number = str(row["accession_number"])
             company_name = row["company_name"].strip()  # pyright: ignore
-            f.write(f"{batch_id},{cik},{company_name},{accession_number}\n")
+            writer.writerow(
+                {
+                    "batch_id": batch_id,
+                    "cik": cik,
+                    "company_name": company_name,
+                    "accession_number": accession_number,
+                }
+            )
             data = payload_func(
                 batch_id=batch_id,
                 cik=cik,
@@ -125,7 +135,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
                 accession_number=accession_number,
             )
             _publish_message(data, os.getenv("REQUEST_TOPIC", ""))
-            print(f"filing={cik:>10}/{accession_number}")
+            print(f"filing={cik:>8}/{accession_number}")
 
             n_processed += 1
 
