@@ -83,20 +83,26 @@ def print_stats(batch_id: str):
     )
 
     total_docs = 0
-    unique_docs = set()
+    uniq_docs = set()
+    uniq_cik = set()
+    non_empty_cik = set()
     n_empty = 0
 
     for result in query.stream():
         total_docs += 1
         accession_number = result.get("accession_number")
-        unique_docs.add(accession_number)
+        uniq_docs.add(accession_number)
+        uniq_cik.add(result.get("cik"))
         if len(result.get("selected_chunks")) == 0:
             n_empty += 1
+        else:
+            non_empty_cik.add(result.get("cik"))
 
-    n_uniq = len(unique_docs)
-    extract_ratio = (n_uniq - n_empty) / n_uniq
+    n_docs = len(uniq_docs)
+    doc_ratio = (n_docs - n_empty) / n_docs
+    cik_ratio = len(non_empty_cik) / len(uniq_cik)
     print(
-        f"{batch_id}: uniq/total/empty: {total_docs}/{n_uniq}/{n_empty}, {extract_ratio:.2f}"  # noqa: E501
+        f"batch_id={batch_id}: uniq/total/empty: {total_docs}/{n_docs}/{n_empty}, cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "  # noqa: E501
     )
 
 
@@ -161,14 +167,14 @@ def parse_cli():
     parser.add_argument(
         "--embedding-dimension",
         type=int,
-        default=768,
+        default=1536,
         help="Embedding vector dimension, typically 768 for Gemini models and 1536 for OpenAI models ",  # noqa E501
     )
     parser.add_argument(
         "--embedding-model",
         type=str,
-        default="text-embedding-005",
-        help="Model to use for embedding (default: text-embedding-005)",
+        default="text-embedding-3-small",
+        help="Model to use for embedding (default: text-embedding-3-small from OpenAI)",
     )
     parser.add_argument(
         "--extraction-model",
