@@ -2,7 +2,7 @@ substitutions:
   _SM_PROJECT_ID: "edgar-ai"
   _REGION: "us-central1"
   _RUNTIME: "python312"
-  _EXTRACTION_RESULT_TOPIC: "edgarai-extraction-result"
+  _EXTRACTION_RESULT_COLLECTION: "extraction_result"
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
@@ -61,4 +61,4 @@ steps:
           --memory=1Gi \
           --timeout=900s \
           --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET} \
-          --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_TOPIC=${_EXTRACTION_RESULT_TOPIC}
+          --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_COLLECTION=${_EXTRACTION_RESULT_COLLECTION}

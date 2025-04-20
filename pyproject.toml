@@ -1,6 +1,6 @@
 [project]
 name = "edgar-funcs"
-version = "0.6.0"
+version = "0.7.0"
 description = "funtions for processing SEC filings on EDGAR site"
 authors = [{ name = "Li Lin", email = "guru.lin@gmail.com" }]
 readme = "README.md"
@@ -15,15 +15,15 @@ dependencies = [
     "spacy>=3.8.3",
     "tenacity>=9.0.0",
     "google-cloud-logging>=3.11.4",
-    "google-cloud-pubsub>=2.28.0",
     "google-cloud-aiplatform>=1.84.0",
     "tiktoken>=0.9.0",
     "openai>=1.66.3",
     "scipy>=1.15.2",
     "pandas>=2.2.3",
-    "google-cloud-bigquery>=3.30.0",
     "rank-bm25>=0.2.2",
     "flask>=2.3.3",
+    "google-cloud-firestore>=2.20.2",
+    "google-cloud-pubsub>=2.29.0",
 ]
 
 

@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import random
 import re
@@ -8,9 +9,38 @@ from functools import partial
 from typing import Any, Hashable
 
 import pandas as pd
+from google.cloud import pubsub_v1
 
 from edgar_funcs.edgar import load_filing_catalog
-from func_helpers import publish_message, send_cloud_run_request
+from func_helpers import (
+    get_default_project_id,
+    google_cloud_credentials,
+    send_cloud_run_request,
+)
+
+
+def _create_publisher():
+    credentials = google_cloud_credentials(
+        scopes=["https://www.googleapis.com/auth/pubsub"]
+    )
+    if credentials:
+        return pubsub_v1.PublisherClient(credentials=credentials)
+    else:
+        return pubsub_v1.PublisherClient()  # Use default credentials
+
+
+def _publish_message(message: dict, topic_name: str):
+    gcp_proj_id = get_default_project_id()
+    if gcp_proj_id and topic_name:
+        publisher = _create_publisher()
+        topic_path = publisher.topic_path(gcp_proj_id, topic_name)
+
+        content = json.dumps(message).encode("utf-8")
+        future = publisher.publish(topic_path, content)
+        message_id = future.result()  # Ensure the publish succeeds
+        print(f"Published message ID {message_id} to {topic_name} with content {content}")
+    else:
+        print(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
 
 def _batch_id() -> str:
@@ -60,7 +90,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
                 company_name=company_name,
                 accession_number=accession_number,
             )
-            publish_message(data, os.getenv("REQUEST_TOPIC", ""))
+            _publish_message(data, os.getenv("REQUEST_TOPIC", ""))
             print(f"filing={cik}/{accession_number}")
 
             n_processed += 1

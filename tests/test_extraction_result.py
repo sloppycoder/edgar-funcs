@@ -1,13 +1,11 @@
-import os
-
 import pytest  # noqa F401
 
 from cli import _batch_id
-from func_helpers import publish_message
+from main import _publish_result
 
 
 @pytest.mark.skip(reason="for local use only")
-def send_test_extraction_result():
+def test_save_extraction_result():
     extraction_result = {
         "batch_id": _batch_id(),
         "cik": "1",
@@ -21,4 +19,4 @@ def send_test_extraction_result():
         "model": "gemini-2.0-flash",
         "extraction_type": "trustee_comp",
     }
-    publish_message(extraction_result, os.environ.get("EXTRACTION_RESULT_TOPIC", ""))
+    _publish_result(extraction_result)

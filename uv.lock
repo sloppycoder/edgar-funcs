@@ -285,14 +285,14 @@ wheels = [
 
 [[package]]
 name = "edgar-funcs"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "en-core-web-sm" },
     { name = "flask" },
     { name = "google-cloud-aiplatform" },
-    { name = "google-cloud-bigquery" },
+    { name = "google-cloud-firestore" },
     { name = "google-cloud-logging" },
     { name = "google-cloud-pubsub" },
     { name = "html2text" },
@@ -325,9 +325,9 @@ requires-dist = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "flask", specifier = ">=2.3.3" },
     { name = "google-cloud-aiplatform", specifier = ">=1.84.0" },
-    { name = "google-cloud-bigquery", specifier = ">=3.30.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.20.2" },
     { name = "google-cloud-logging", specifier = ">=3.11.4" },
-    { name = "google-cloud-pubsub", specifier = ">=2.28.0" },
+    { name = "google-cloud-pubsub", specifier = ">=2.29.0" },
     { name = "html2text", specifier = ">=2024.2.26" },
     { name = "openai", specifier = ">=1.66.3" },
     { name = "pandas", specifier = ">=2.2.3" },
@@ -504,6 +504,22 @@ wheels = [
 ]
 
 [[package]]
+name = "google-cloud-firestore"
+version = "2.20.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "google-cloud-core" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/81/94/6e2c2b0fc81a9900631a88db18ce82276397031b3fabf73134f1c8b79b8b/google_cloud_firestore-2.20.2.tar.gz", hash = "sha256:0ad2e33fa7da0ba8fb7ccc324f91d3f57866b770e24840bd62f6a272f747c5f9", size = 511708 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/ce/3bb46615668647e3880292ef2248f39ebcc38b7d083d593d28fa94fe8ca3/google_cloud_firestore-2.20.2-py3-none-any.whl", hash = "sha256:0ff7b4c66e3ad2fe00f7d5d8c15127bf4ff8b316c6e4eb635ac51d9a9bcd828b", size = 358912 },
+]
+
+[[package]]
 name = "google-cloud-logging"
 version = "3.11.4"
 source = { registry = "https://pypi.org/simple" }
@@ -525,7 +541,7 @@ wheels = [
 
 [[package]]
 name = "google-cloud-pubsub"
-version = "2.28.0"
+version = "2.29.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-api-core", extra = ["grpc"] },
@@ -538,9 +554,9 @@ dependencies = [
     { name = "proto-plus" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/91/e5ed3f50d543cd752efc6957c0b196e5dcdc5ffc60956a8efe566c81e3ff/google_cloud_pubsub-2.28.0.tar.gz", hash = "sha256:904e894b4e15121521077ac85c9aa8f4e7b8517bc5fb409ddb2aac8df1a02b3c", size = 371127 }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/4d/1db6b937d76d4cb1dca484e4f61f138b5611f0658992bf1ad6679bbddfad/google_cloud_pubsub-2.29.0.tar.gz", hash = "sha256:b820f8d410c96ad87b8da79c696b979e1a182a170d0c0602626f5b9d8cbf21ee", size = 389745 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/33/07636ce3dd59016ab88b98fbb9e614c76d8f210f5c8feec2db5891f6dc5d/google_cloud_pubsub-2.28.0-py2.py3-none-any.whl", hash = "sha256:76b41a322b43bc845fb06ffe238758726324d957d0161bae3ff4b14339da144b", size = 301549 },
+    { url = "https://files.pythonhosted.org/packages/71/00/5dd16327bad524282a048b2efb10b335d9fe089ec260c8d2b2c8054950aa/google_cloud_pubsub-2.29.0-py2.py3-none-any.whl", hash = "sha256:3ccc76ae623e408c7a80f2f81bfd3ab9dca1d61231cc2a063d569d021449481a", size = 317313 },
 ]
 
 [[package]]
@@ -1018,42 +1034,42 @@ wheels = [
 
 [[package]]
 name = "opentelemetry-api"
-version = "1.31.0"
+version = "1.32.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
     { name = "importlib-metadata" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/89/9d80fa1265a25306b5d9b2707ef09094a6dda9feeac2ee159d5a214f989c/opentelemetry_api-1.31.0.tar.gz", hash = "sha256:d8da59e83e8e3993b4726e4c1023cd46f57c4d5a73142e239247e7d814309de1", size = 63853 }
+sdist = { url = "https://files.pythonhosted.org/packages/42/40/2359245cd33641c2736a0136a50813352d72f3fc209de28fb226950db4a1/opentelemetry_api-1.32.1.tar.gz", hash = "sha256:a5be71591694a4d9195caf6776b055aa702e964d961051a0715d05f8632c32fb", size = 64138 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/87/5413da9dd80d66ff86205bbd08a9cf69165642565c00cfce6590e0e82980/opentelemetry_api-1.31.0-py3-none-any.whl", hash = "sha256:145b72c6c16977c005c568ec32f4946054ab793d8474a17fd884b0397582c5f2", size = 65099 },
+    { url = "https://files.pythonhosted.org/packages/12/f2/89ea3361a305466bc6460a532188830351220b5f0851a5fa133155c16eca/opentelemetry_api-1.32.1-py3-none-any.whl", hash = "sha256:bbd19f14ab9f15f0e85e43e6a958aa4cb1f36870ee62b7fd205783a112012724", size = 65287 },
 ]
 
 [[package]]
 name = "opentelemetry-sdk"
-version = "1.31.0"
+version = "1.32.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-semantic-conventions" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/cc/2f461097fa53e7db0e5aca8be93be94d658a551f047129a206c34cc19d8d/opentelemetry_sdk-1.31.0.tar.gz", hash = "sha256:452d7d5b3c1db2e5e4cb64abede0ddd20690cb244a559c73a59652fdf6726070", size = 159527 }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/65/2069caef9257fae234ca0040d945c741aa7afbd83a7298ee70fc0bc6b6f4/opentelemetry_sdk-1.32.1.tar.gz", hash = "sha256:8ef373d490961848f525255a42b193430a0637e064dd132fd2a014d94792a092", size = 161044 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/f1/7dcc1fa9a27f3b346e56e8a090ee2312e36c8ff1f6f9f345a8fc778f0c4d/opentelemetry_sdk-1.31.0-py3-none-any.whl", hash = "sha256:97c9a03865e69723725fb64fe04343a488c3e61e684eb804bd7d6da2215dfc60", size = 118866 },
+    { url = "https://files.pythonhosted.org/packages/dc/00/d3976cdcb98027aaf16f1e980e54935eb820872792f0eaedd4fd7abb5964/opentelemetry_sdk-1.32.1-py3-none-any.whl", hash = "sha256:bba37b70a08038613247bc42beee5a81b0ddca422c7d7f1b097b32bf1c7e2f17", size = 118989 },
 ]
 
 [[package]]
 name = "opentelemetry-semantic-conventions"
-version = "0.52b0"
+version = "0.53b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
     { name = "opentelemetry-api" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/0b/923171ff87ac44064b47bb798ac983917799458b7a5475d0badbf3f1e929/opentelemetry_semantic_conventions-0.52b0.tar.gz", hash = "sha256:f8bc8873a69d0a2f45746c31980baad2bb10ccee16b1816497ccf99417770386", size = 111274 }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/b6/3c56e22e9b51bcb89edab30d54830958f049760bbd9ab0a759cece7bca88/opentelemetry_semantic_conventions-0.53b1.tar.gz", hash = "sha256:4c5a6fede9de61211b2e9fc1e02e8acacce882204cd770177342b6a3be682992", size = 114350 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/ca/56319c0dba740d1f5cd7b6db0dbe5c760400e49120975e063596eba25cc6/opentelemetry_semantic_conventions-0.52b0-py3-none-any.whl", hash = "sha256:4d843652ae1f9f3c0d4d8df0bfef740627c90495ac043fc33f0a04bad3b606e2", size = 183409 },
+    { url = "https://files.pythonhosted.org/packages/27/6b/a8fb94760ef8da5ec283e488eb43235eac3ae7514385a51b6accf881e671/opentelemetry_semantic_conventions-0.53b1-py3-none-any.whl", hash = "sha256:21df3ed13f035f8f3ea42d07cbebae37020367a53b47f1ebee3b10a381a00208", size = 188443 },
 ]
 
 [[package]]

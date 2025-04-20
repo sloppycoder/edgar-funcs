@@ -9,7 +9,7 @@ from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 from func_helpers import (
     decode_request,
-    publish_message,
+    insert_into_firestore,
     setup_cloud_logging,
 )
 
@@ -95,13 +95,14 @@ def req_processor():
 
 
 def _publish_result(result: dict):
-    id = f"{result['extraction_type']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
-    result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
-    if result_topic:
-        publish_message(result, result_topic)
-        logger.info(f"result for {id} published to {result_topic}")
+    collection_name = os.environ.get(
+        "EXTRACTION_RESULT_COLLECTION", "edgar-funcs.extraction_result"
+    )
+    if collection_name:
+        insert_into_firestore(collection_name, result)
+        logger.info(f"Result inserted into Firebase collection '{collection_name}'")
     else:
-        logger.info(f"result for {id} discarded")
+        logger.info("Firebase collection name not set. Result not stored.")
 
 
 if __name__ == "__main__":

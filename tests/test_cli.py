@@ -9,7 +9,7 @@ from edgar_funcs.edgar import load_filing_catalog
 
 @pytest.fixture
 def mock_publish_request():
-    with patch("cli.publish_message") as mock:
+    with patch("cli._publish_message") as mock:
         yield mock
 
 
