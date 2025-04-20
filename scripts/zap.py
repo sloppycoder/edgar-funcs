@@ -19,6 +19,16 @@ def delete_collection(coll_ref, batch_size):
         return delete_collection(coll_ref, batch_size)
 
 
+def delete_document_and_subcollections(doc_ref):
+    # Delete all subcollections first
+    for subcollection in doc_ref.collections():
+        for doc in subcollection.stream():
+            delete_document_and_subcollections(doc.reference)
+    # Delete the main document
+    doc_ref.delete()
+    print(f"Deleted: {doc_ref.path}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python zap.py <collection_name>")
