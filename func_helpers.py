@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import os
+from datetime import datetime, timedelta
 
 import google.auth
 import requests
@@ -14,16 +15,6 @@ from google.oauth2 import service_account
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-
-
-def insert_into_firestore(collection_name: str, data: dict):
-    """
-    Inserts a dictionary into a specified Firestore collection.
-    """
-    db = firestore.Client()
-    collection_ref = db.collection(collection_name)
-    collection_ref.add(data)
-    logger.info(f"Inserted data into Firestore collection '{collection_name}': {data}")
 
 
 def google_cloud_credentials(scopes: list[str]) -> service_account.Credentials | None:
@@ -109,3 +100,51 @@ def send_cloud_run_request(url: str, payload: dict):
     if response.status_code == 200:
         return response.json()
     raise ValueError(f"response status {response.status_code}\n{response.text}")
+
+
+def insert_into_firestore(collection_name: str, data: dict):
+    """
+    Inserts a dictionary into a specified Firestore collection.
+    """
+    db = firestore.Client()
+    collection_ref = db.collection(collection_name)
+    collection_ref.add(data)
+    logger.info(f"Inserted data into Firestore collection '{collection_name}': {data}")
+
+
+def mark_job_in_progress(
+    job_id: str, collection_name: str = "filings_in_progress", ttl_hours: int = 24
+) -> bool:
+    """
+    Marks a filing as in progress by inserting it into the specified Firestore collection.
+    If a document with the same job_id already exists, it returns False.
+    Otherwise, it inserts a new document and returns True.
+
+    This is used as a de-duplication mechanism to prevent reprocessing the same filing,
+    i.e. when pub/sub message is redelivered.
+
+    Args:
+        job_id (str): The unique identifier for the job.
+        collection_name (str): The Firestore collection name.
+        ttl_hours (int): Time-to-Live in hours for the document.
+    """
+    db = firestore.Client()
+    collection_ref = db.collection(collection_name)
+
+    # Use a Firestore transaction for atomicity
+    def transaction_operation(transaction):
+        doc_ref = collection_ref.document(job_id)
+        doc_snapshot = doc_ref.get(transaction=transaction)
+        if doc_snapshot.exists:
+            return False
+        transaction.set(
+            doc_ref,
+            {
+                "job_id": job_id,
+                "expires_at": datetime.utcnow() + timedelta(hours=ttl_hours),
+            },
+        )
+        return True
+
+    transaction = db.transaction()
+    return transaction_operation(transaction)

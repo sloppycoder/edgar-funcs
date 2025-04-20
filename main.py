@@ -10,6 +10,7 @@ from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
 from func_helpers import (
     decode_request,
     insert_into_firestore,
+    mark_job_in_progress,
     setup_cloud_logging,
 )
 
@@ -29,6 +30,13 @@ def req_processor():
             return jsonify({"error": "No Pub/Sub message received."}), 400
 
         logger.info(f"Received request for {data}")
+
+        job_id = f"{data['batch_id']}/{data['cik']}/{data['accession_number']}"
+        if not mark_job_in_progress(job_id):
+            logger.info(f"Job {job_id} is already in progress, skipping.")
+            return jsonify(
+                {"message": f"Job {job_id} is already in progress, skipping."}
+            ), 200
 
         action = data.get("action")
         if action not in ["chunk", "trustee", "fundmgr"]:
