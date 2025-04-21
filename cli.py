@@ -236,15 +236,16 @@ def main():
         extraction_model=args.extraction_model,
     )
 
-    df_filings = load_filing_catalog(args.start, args.end)
     if args.mode == "list":
         df_todo = pd.read_csv(args.arg1)
     elif args.mode == "sample":
+        df_filings = load_filing_catalog(args.start, args.end)
         df_todo = df_filings.sample(frac=float(args.arg1) / 100)
         if len(df_todo) == 0:
             print("No filings to process")
             return
     elif args.mode == "accession_number":
+        df_filings = load_filing_catalog("2000-01-01", "2025-01-01")  # all the entries
         df_todo = df_filings[df_filings["accession_number"] == args.arg1]
         if df_todo.empty:
             print(f"Accession number {args.arg1} not found in the catalog.")
