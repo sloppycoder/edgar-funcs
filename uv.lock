@@ -308,6 +308,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "google-cloud-bigquery" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -340,6 +341,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "google-cloud-bigquery", specifier = ">=3.30.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = "==1.1.399" },
     { name = "pytest", specifier = ">=8.3.0" },

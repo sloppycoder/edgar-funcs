@@ -10,6 +10,7 @@ from functools import partial
 from typing import Any, Hashable
 
 import pandas as pd
+from google.cloud import bigquery
 
 from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import (
@@ -81,7 +82,43 @@ def print_stats(batch_id: str):
         print(f"Invalid batch_id format: {batch_id}")
         return
 
-    print(f"printing status for {batch_id} not yet implemented")
+    total_docs = 0
+    uniq_docs = set()
+    uniq_cik = set()
+    non_empty_cik = set()
+    n_empty = 0
+    extraction_type = ""
+
+    client = bigquery.Client()
+    table_name = os.environ.get("RESULT_TABLE", "edgar-ai.edgar.extraction_result")
+    query = f"SELECT * FROM `{table_name}` WHERE batch_id = '{batch_id}' LIMIT 5000"
+    for result in client.query(query):
+        total_docs += 1
+        extraction_type = result.get("extraction_type")
+        accession_number = result.get("accession_number")
+        uniq_docs.add(accession_number)
+        uniq_cik.add(result.get("cik"))
+        if len(result.get("selected_chunks")) == 0:
+            n_empty += 1
+        else:
+            non_empty_cik.add(result.get("cik"))
+
+    n_docs = len(uniq_docs)
+
+    try:
+        doc_ratio = (n_docs - n_empty) / n_docs
+    except ZeroDivisionError:
+        doc_ratio = 0.0
+    try:
+        cik_ratio = len(non_empty_cik) / len(uniq_cik)
+    except ZeroDivisionError:
+        cik_ratio = 0.0
+
+    print(
+        f"{batch_id} {extraction_type}: "
+        + f"total/uniq/empty: {total_docs}/{n_docs}/{n_empty}, "
+        + f"cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "
+    )
 
 
 def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
