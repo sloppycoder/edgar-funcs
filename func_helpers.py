@@ -3,13 +3,14 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 import google.auth
 import requests
 from dotenv import load_dotenv
 from flask import Request
-from google.cloud import firestore
 from google.cloud import logging as cloud_logging
+from google.cloud import pubsub_v1
 from google.oauth2 import service_account
 
 from edgar_funcs.rag.helper import gcs_client
@@ -105,14 +106,32 @@ def send_cloud_run_request(url: str, payload: dict):
     raise ValueError(f"response status {response.status_code}\n{response.text}")
 
 
-def insert_into_firestore(collection_name: str, data: dict):
-    """
-    Inserts a dictionary into a specified Firestore collection.
-    """
-    db = firestore.Client()
-    collection_ref = db.collection(collection_name)
-    collection_ref.add(data)
-    logger.debug(f"Inserted data into Firestore collection '{collection_name}': {data}")
+@lru_cache(maxsize=1)
+def create_publisher():
+    credentials = google_cloud_credentials(
+        scopes=["https://www.googleapis.com/auth/pubsub"]
+    )
+    if credentials:
+        return pubsub_v1.PublisherClient(credentials=credentials)
+    else:
+        return pubsub_v1.PublisherClient()  # Use default credentials
+
+
+def publish_message(message: dict, topic_name: str):
+    gcp_proj_id = get_default_project_id()
+    if gcp_proj_id and topic_name:
+        publisher = create_publisher()
+        topic_path = publisher.topic_path(gcp_proj_id, topic_name)
+
+        content = json.dumps(message).encode("utf-8")
+        future = publisher.publish(topic_path, content)
+        message_id = future.result()  # Ensure the publish succeeds
+
+        logger.debug(
+            f"Published message ID {message_id} to {topic_name} with content {content}"
+        )
+    else:
+        logging.info(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
 
 def write_lock(blob_path: str, validity: int = 900) -> bool:

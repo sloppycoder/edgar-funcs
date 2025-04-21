@@ -285,15 +285,15 @@ wheels = [
 
 [[package]]
 name = "edgar-funcs"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "en-core-web-sm" },
     { name = "flask" },
     { name = "google-cloud-aiplatform" },
-    { name = "google-cloud-firestore" },
     { name = "google-cloud-logging" },
+    { name = "google-cloud-pubsub" },
     { name = "html2text" },
     { name = "openai" },
     { name = "pandas" },
@@ -308,7 +308,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "google-cloud-pubsub" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -325,8 +324,8 @@ requires-dist = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "flask", specifier = ">=2.3.3" },
     { name = "google-cloud-aiplatform", specifier = ">=1.84.0" },
-    { name = "google-cloud-firestore", specifier = ">=2.20.2" },
     { name = "google-cloud-logging", specifier = ">=3.11.4" },
+    { name = "google-cloud-pubsub", specifier = ">=2.29.0" },
     { name = "html2text", specifier = ">=2024.2.26" },
     { name = "openai", specifier = ">=1.66.3" },
     { name = "pandas", specifier = ">=2.2.3" },
@@ -341,7 +340,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "google-cloud-pubsub", specifier = ">=2.29.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = "==1.1.399" },
     { name = "pytest", specifier = ">=8.3.0" },
@@ -501,22 +499,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d6/b8/2b53838d2acd6ec6168fd284a990c76695e84c65deee79c9f3a4276f6b4f/google_cloud_core-2.4.3.tar.gz", hash = "sha256:1fab62d7102844b278fe6dead3af32408b1df3eb06f5c7e8634cbd40edc4da53", size = 35861 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/86/bda7241a8da2d28a754aad2ba0f6776e35b67e37c36ae0c45d49370f1014/google_cloud_core-2.4.3-py2.py3-none-any.whl", hash = "sha256:5130f9f4c14b4fafdff75c79448f9495cfade0d8775facf1b09c3bf67e027f6e", size = 29348 },
-]
-
-[[package]]
-name = "google-cloud-firestore"
-version = "2.20.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
-    { name = "google-auth" },
-    { name = "google-cloud-core" },
-    { name = "proto-plus" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/81/94/6e2c2b0fc81a9900631a88db18ce82276397031b3fabf73134f1c8b79b8b/google_cloud_firestore-2.20.2.tar.gz", hash = "sha256:0ad2e33fa7da0ba8fb7ccc324f91d3f57866b770e24840bd62f6a272f747c5f9", size = 511708 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/ce/3bb46615668647e3880292ef2248f39ebcc38b7d083d593d28fa94fe8ca3/google_cloud_firestore-2.20.2-py3-none-any.whl", hash = "sha256:0ff7b4c66e3ad2fe00f7d5d8c15127bf4ff8b316c6e4eb635ac51d9a9bcd828b", size = 358912 },
 ]
 
 [[package]]

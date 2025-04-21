@@ -10,34 +10,13 @@ from functools import partial
 from typing import Any, Hashable
 
 import pandas as pd
-from google.cloud import firestore, pubsub_v1
-from google.cloud.firestore_v1.base_query import FieldFilter
 
 from edgar_funcs.edgar import load_filing_catalog
 from func_helpers import (
+    create_publisher,
     get_default_project_id,
-    google_cloud_credentials,
     send_cloud_run_request,
 )
-
-
-def _create_publisher():
-    credentials = google_cloud_credentials(
-        scopes=["https://www.googleapis.com/auth/pubsub"]
-    )
-    batch_settings = pubsub_v1.types.BatchSettings(
-        max_bytes=1024 * 5,  # 5 KB
-        max_latency=0.1,  # 100 ms
-        max_messages=1000,
-    )
-    if credentials:
-        return pubsub_v1.PublisherClient(
-            credentials=credentials, batch_settings=batch_settings
-        )
-    else:
-        return pubsub_v1.PublisherClient(
-            batch_settings=batch_settings
-        )  # Use default credentials
 
 
 def _publish_messages(messages: list[dict], topic_name: str):
@@ -46,7 +25,7 @@ def _publish_messages(messages: list[dict], topic_name: str):
     """
     gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
-        publisher = _create_publisher()
+        publisher = create_publisher()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
         futures = []
@@ -102,46 +81,7 @@ def print_stats(batch_id: str):
         print(f"Invalid batch_id format: {batch_id}")
         return
 
-    db = firestore.Client()
-    collection_name = os.getenv("EXTRACTION_RESULT_COLLECTION", "extraction_result")
-    query = db.collection(collection_name).where(
-        filter=FieldFilter("batch_id", "==", batch_id)
-    )
-
-    total_docs = 0
-    uniq_docs = set()
-    uniq_cik = set()
-    non_empty_cik = set()
-    n_empty = 0
-    extraction_type = ""
-
-    for result in query.stream():
-        total_docs += 1
-        extraction_type = result.get("extraction_type")
-        accession_number = result.get("accession_number")
-        uniq_docs.add(accession_number)
-        uniq_cik.add(result.get("cik"))
-        if len(result.get("selected_chunks")) == 0:
-            n_empty += 1
-        else:
-            non_empty_cik.add(result.get("cik"))
-
-    n_docs = len(uniq_docs)
-
-    try:
-        doc_ratio = (n_docs - n_empty) / n_docs
-    except ZeroDivisionError:
-        doc_ratio = 0.0
-    try:
-        cik_ratio = len(non_empty_cik) / len(uniq_cik)
-    except ZeroDivisionError:
-        cik_ratio = 0.0
-
-    print(
-        f"{batch_id} {extraction_type}: "
-        + f"total/uniq/empty: {total_docs}/{n_docs}/{n_empty}, "
-        + f"cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "
-    )
+    print(f"printing status for {batch_id} not yet implemented")
 
 
 def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):

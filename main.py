@@ -16,7 +16,7 @@ from edgar_funcs.rag.vectorize import (
 from func_helpers import (
     decode_request,
     delete_lock,
-    insert_into_firestore,
+    publish_message,
     setup_cloud_logging,
     write_lock,
 )
@@ -160,14 +160,13 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
 
 
 def _publish_result(result: dict):
-    collection_name = os.environ.get(
-        "EXTRACTION_RESULT_COLLECTION", "edgar-funcs.extraction_result"
-    )
-    if collection_name:
-        insert_into_firestore(collection_name, result)
-        logger.info(f"Result inserted into Firebase collection '{collection_name}'")
+    id = f"{result['action']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
+    result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
+    if result_topic:
+        publish_message(result, result_topic)
+        logger.info(f"result for {id} published to {result_topic}")
     else:
-        logger.info("Firebase collection name not set. Result not stored.")
+        logger.info(f"result for {id} discarded")
 
 
 if __name__ == "__main__":
