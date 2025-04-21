@@ -59,6 +59,11 @@ def batch_embedding(
     for chunk in chunks:
         chunk_tokens = len(encoding.encode(chunk))
 
+        if chunk_tokens > max_tokens_per_request:
+            # Truncate the chunk to fit within the token limit
+            chunk = _truncate_chunk(chunk, encoding, max_tokens_per_request)
+            chunk_tokens = len(encoding.encode(chunk))
+
         if (
             len(current_batch) >= max_chunks_per_request
             or (current_tokens + chunk_tokens) > max_tokens_per_request
@@ -164,3 +169,21 @@ def _call_gemini_embedding_api(
             raise RetriableServerError(e)
         else:
             raise
+
+
+def _truncate_chunk(chunk: str, encoding, max_tokens: int) -> str:
+    """
+    Truncates a chunk to fit within the token limit.
+
+    Args:
+        chunk (str): The text chunk to truncate.
+        encoding: The token encoding object.
+        max_tokens (int): The maximum number of tokens allowed.
+
+    Returns:
+        str: The truncated text chunk.
+    """
+    tokens = encoding.encode(chunk)
+    if len(tokens) > max_tokens:
+        tokens = tokens[: max_tokens - 500]  # leave some buffer
+    return encoding.decode(tokens)
