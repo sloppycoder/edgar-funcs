@@ -53,7 +53,7 @@ def req_processor():
 
         # step 2: perform extraction using LLM
         data["date_filed"] = chunks.metadata.get("date_filed", "1971-01-01")
-        result = _perform_extraction(**data)
+        result = _perform_extraction(data)
 
         # step 3: save the extraction result
         _publish_result(result)
