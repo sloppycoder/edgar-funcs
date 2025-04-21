@@ -17,17 +17,12 @@ def client():
 @patch("main._publish_result")
 @patch("main._perform_extraction")
 @patch("main._retrieve_chunks_for_filing")
-@patch("main.mark_job_in_progress")
-@patch("main.mark_job_done")
 def test_req_processor_success(
-    mock_mark_job_done,
-    mock_mark_job_in_progress,
     mock_retrieve_chunks,
     mock_perform_extraction,
     mock_publish_result,
     client,
 ):
-    mock_mark_job_in_progress.return_value = True
     mock_retrieve_chunks.return_value = type(
         "MockChunks", (), {"metadata": {"date_filed": "2023-01-01"}}
     )()
@@ -57,4 +52,3 @@ def test_req_processor_success(
     assert response.status_code == 200
     assert response.json == {"response": "some giberish"}
     mock_publish_result.assert_called_once()
-    mock_mark_job_done.assert_called_once()

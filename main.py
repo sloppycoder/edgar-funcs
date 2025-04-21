@@ -40,23 +40,12 @@ def req_processor():
             logger.info(f"Unknown action {action}")
             return jsonify({"error": f"Unknown action: {action}"}), 200
 
-        # check if request has batch_id, cik and accession_number
-        batch_id = data.get("batch_id")
-        cik = data.get("cik")
-        accession_number = data.get("accession_number")
-
-        if not cik or not accession_number or not batch_id:
-            logger.info(f"Invalid request parameters {data}")
-            return jsonify({"error": f"Invalid request parameters {data}"}), 200
-
-        # mark job before long running process
-        job_id = f"{batch_id}|{cik}|{accession_number}"
-        if not mark_job_in_progress(job_id):
-            logger.info(f"Job {job_id} is already in progress, skipping")
-            return jsonify({"error": f"Job {job_id} is already in progress"}), 200
-
         # step 1: check if text chunks and embeddings already exists
         chunks = _retrieve_chunks_for_filing(**data)
+        if not chunks:
+            msg = "cannot retrieve text chunks, maybe another job is in progress?"
+            logger.info(msg)
+            return jsonify({"error": msg}), 200
 
         # step 2: perform extraction using LLM
         data["date_filed"] = chunks.metadata.get("date_filed", "1971-01-01")
@@ -64,10 +53,6 @@ def req_processor():
 
         # step 3: save the extraction result
         _publish_result(result)
-
-        # lastly delete the job marker.
-        # this will allow redelivery attempt to be processed
-        mark_job_done(job_id)
 
         return jsonify(result), 200
 
@@ -87,8 +72,9 @@ def _retrieve_chunks_for_filing(
     embedding_model: str,
     embedding_dimension: int,
     chunk_algo_version: str,
+    batch_id: str,
     **_,  # ignore any other parameters
-) -> TextChunksWithEmbedding:
+) -> TextChunksWithEmbedding | None:
     try:
         existing_chunks = TextChunksWithEmbedding.load(
             cik=cik,
@@ -102,6 +88,11 @@ def _retrieve_chunks_for_filing(
         )
         return existing_chunks
     except ValueError:
+        # mark job before long running process
+        job_id = f"{batch_id}|{cik}|{accession_number}"
+        if not mark_job_in_progress(job_id):
+            return None
+
         filing = SECFiling(cik=cik, accession_number=accession_number)
         text_chunks = chunk_filing(filing)
         metadata = {
@@ -116,6 +107,7 @@ def _retrieve_chunks_for_filing(
         logger.info(
             f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number}"
         )
+        mark_job_done(job_id)
         return new_chunks
 
 
