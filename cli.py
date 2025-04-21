@@ -25,21 +25,38 @@ def _create_publisher():
     credentials = google_cloud_credentials(
         scopes=["https://www.googleapis.com/auth/pubsub"]
     )
+    batch_settings = pubsub_v1.types.BatchSettings(
+        max_bytes=1024 * 5,  # 5 KB
+        max_latency=0.1,  # 100 ms
+        max_messages=1000,
+    )
     if credentials:
-        return pubsub_v1.PublisherClient(credentials=credentials)
+        return pubsub_v1.PublisherClient(
+            credentials=credentials, batch_settings=batch_settings
+        )
     else:
-        return pubsub_v1.PublisherClient()  # Use default credentials
+        return pubsub_v1.PublisherClient(
+            batch_settings=batch_settings
+        )  # Use default credentials
 
 
-def _publish_message(message: dict, topic_name: str):
+def _publish_messages(messages: list[dict], topic_name: str):
+    """
+    Publish multiple messages to a Pub/Sub topic in batch.
+    """
     gcp_proj_id = get_default_project_id()
     if gcp_proj_id and topic_name:
         publisher = _create_publisher()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
-        content = json.dumps(message).encode("utf-8")
-        future = publisher.publish(topic_path, content)
-        future.result()  # Ensure the publish succeeds
+        futures = []
+        for message in messages:
+            content = json.dumps(message).encode("utf-8")
+            futures.append(publisher.publish(topic_path, content))
+
+        # Ensure all publishes succeed
+        for future in futures:
+            future.result()
     else:
         print(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
@@ -124,6 +141,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
     n_total, n_processed = len(todo_list), 0
 
     output_file = f"tmp/{batch_id}.csv"
+    messages = []
     with open(output_file, "w", newline="") as f:
         fieldnames = ["batch_id", "cik", "company_name", "accession_number"]
         writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
@@ -146,10 +164,13 @@ def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
                 company_name=company_name,
                 accession_number=accession_number,
             )
-            _publish_message(data, os.getenv("REQUEST_TOPIC", ""))
+            messages.append(data)
             print(f"filing={cik:>8}/{accession_number}")
 
             n_processed += 1
+
+    if messages:
+        _publish_messages(messages, os.getenv("REQUEST_TOPIC", ""))
 
     print(
         f"Requested {n_processed} filings out of {n_total}, list saved to {output_file}"
