@@ -1,4 +1,7 @@
 # all tests in this file are meant for local debugging only
+
+import os
+
 import pytest  # noqa: F401
 
 from edgar_funcs.edgar import SECFiling
@@ -7,6 +10,7 @@ from edgar_funcs.rag.vectorize import (
     TextChunksWithEmbedding,
 )
 from edgar_funcs.rag.vectorize.chunking import chunk_text, trim_html_content
+from func_helpers import _get_lock_blob, delete_lock, write_lock
 
 embedding_model, embedding_dimension, extraction_model = (
     "text-embedding-3-small",
@@ -59,6 +63,17 @@ def test_full_chunking_and_embedding():
     cik, accession_number, chunk_algo_version = "1006415", "0001104659-20-088997", "4"
     chunks = _chunk_and_get_embeddings(cik, accession_number, chunk_algo_version)
     assert len(chunks.texts) > 0
+
+
+@pytest.mark.skip(reason="local testing only")
+def test_lock_file():
+    os.environ["STORAGE_PREFIX"] = "gs://edgar_666/tmp"
+    lock_path = "some_random_lock.json"
+    assert write_lock(lock_path)
+    assert not write_lock(lock_path)
+    assert _get_lock_blob(lock_path).exists()  # pyright: ignore
+    delete_lock(lock_path)
+    assert not _get_lock_blob(lock_path).exists()  # pyright: ignore
 
 
 def _chunk_and_get_embeddings(cik: str, accession_number: str, chunk_algo_version: str):

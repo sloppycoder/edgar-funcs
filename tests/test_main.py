@@ -17,7 +17,9 @@ def client():
 @patch("main._publish_result")
 @patch("main._perform_extraction")
 @patch("main._retrieve_chunks_for_filing")
+@patch("main._write_lock")
 def test_req_processor_success(
+    mock_write_lock,
     mock_retrieve_chunks,
     mock_perform_extraction,
     mock_publish_result,
@@ -52,3 +54,4 @@ def test_req_processor_success(
     assert response.status_code == 200
     assert response.json == {"response": "some giberish"}
     mock_publish_result.assert_called_once()
+    mock_write_lock.assert_not_called()

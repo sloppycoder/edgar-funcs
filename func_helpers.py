@@ -2,16 +2,18 @@ import base64
 import json
 import logging
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import google.auth
 import requests
 from dotenv import load_dotenv
 from flask import Request
-from google.api_core.exceptions import NotFound
 from google.cloud import firestore
 from google.cloud import logging as cloud_logging
 from google.oauth2 import service_account
+
+from edgar_funcs.rag.helper import gcs_client
+from edgar_funcs.rag.vectorize import _storage_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -113,70 +115,39 @@ def insert_into_firestore(collection_name: str, data: dict):
     logger.debug(f"Inserted data into Firestore collection '{collection_name}': {data}")
 
 
-def mark_job_in_progress(
-    job_id: str, collection_name: str = "jobs_in_progress", ttl_hours: int = 24
-) -> bool:
-    """
-    Marks a filing as in progress by inserting it into the specified Firestore collection.
-    If a document with the same job_id already exists, it returns False.
-    Otherwise, it inserts a new document and returns True.
-
-    This is used as a de-duplication mechanism to prevent reprocessing the same filing,
-    i.e. when pub/sub message is redelivered.
-
-    Args:
-        job_id (str): The unique identifier for the job.
-        collection_name (str): The Firestore collection name.
-        ttl_hours (int): Time-to-Live in hours for the document.
-    """
-    if job_id.startswith("single|"):
-        return True
-
-    db = firestore.Client()
-    doc_ref = db.collection(collection_name).document(job_id)
-
-    @firestore.transactional
-    def transaction_logic(transaction):
-        try:
-            doc_snapshot = doc_ref.get(transaction=transaction)
-            if doc_snapshot.exists:
-                return False
-        except NotFound:
-            pass
-
-        transaction.set(
-            doc_ref,
-            {
-                "id": job_id,
-                "expires_at": datetime.now(UTC) + timedelta(hours=ttl_hours),
-            },
-        )
-        return True
-
-    transaction = db.transaction()
-    return transaction_logic(transaction)
-
-
-def mark_job_done(job_id: str, collection_name: str = "jobs_in_progress") -> bool:
-    """
-    Marks a job as done by deleting its document from the specified Firestore collection.
-    If the document does not exist, it handles the exception gracefully.
-
-    Args:
-        job_id (str): The unique identifier for the job.
-        collection_name (str): The Firestore collection name.
-
-    Returns:
-        bool: True if the document was deleted, False if it did not exist.
-    """
-    if job_id.startswith("single|"):
-        return True
-
-    db = firestore.Client()
-    doc_ref = db.collection(collection_name).document(job_id)
-
-    try:
-        doc_ref.delete()
-        return True
-    except NotFound:
+def write_lock(blob_path: str, validity: int = 900) -> bool:
+    lock_blob = _get_lock_blob(blob_path)
+    if not lock_blob:
         return False
+
+    if lock_blob.exists():
+        try:
+            old_content = lock_blob.download_as_string()
+            old_ts = json.loads(old_content).get("created_at", "1971-01-01T00:00:00")
+        except json.JSONDecodeError:
+            # lock file exists but content is not valid JSON
+            # we'll just override it
+            old_ts = "1971-01-01T00:00:00"
+
+        old_dt = datetime.fromisoformat(old_ts)
+        if old_dt > datetime.now():
+            logger.info("Lock file is still valid.")
+            return False
+
+    expire_at = datetime.now() + timedelta(seconds=validity)
+    content = {"created_at": expire_at.isoformat()}
+    lock_blob.upload_from_string(json.dumps(content))
+    return True
+
+
+def delete_lock(blob_path: str):
+    lock_blob = _get_lock_blob(blob_path)
+    if lock_blob:
+        lock_blob.delete()
+
+
+def _get_lock_blob(path: str):
+    bucket_name, prefix = _storage_prefix(os.environ.get("STORAGE_PREFIX", ""))
+    if bucket_name:
+        bucket = gcs_client().bucket(bucket_name)
+        return bucket.blob(f"{prefix}/{path}")

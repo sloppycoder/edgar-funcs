@@ -8,13 +8,17 @@ from flask import Flask, jsonify, request
 from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
-from edgar_funcs.rag.vectorize import TextChunksWithEmbedding, chunk_filing
+from edgar_funcs.rag.vectorize import (
+    TextChunksWithEmbedding,
+    _blob_path,
+    chunk_filing,
+)
 from func_helpers import (
     decode_request,
+    delete_lock,
     insert_into_firestore,
-    mark_job_done,
-    mark_job_in_progress,
     setup_cloud_logging,
+    write_lock,
 )
 
 setup_cloud_logging()
@@ -88,26 +92,28 @@ def _retrieve_chunks_for_filing(
         )
         return existing_chunks
     except ValueError:
-        # mark job before long running process
-        job_id = f"{batch_id}|{cik}|{accession_number}"
-        if not mark_job_in_progress(job_id):
+        metadata = {
+            "cik": cik,
+            "accession_number": accession_number,
+            "chunk_algo_version": chunk_algo_version,
+            "model": embedding_model,
+            "dimension": embedding_dimension,
+        }
+
+        lock_blob_path = _blob_path(**metadata).replace(".pickle", "_lock.json")
+        if not write_lock(lock_blob_path):
             return None
 
         filing = SECFiling(cik=cik, accession_number=accession_number)
+        metadata["date_filed"] = filing.date_filed
         text_chunks = chunk_filing(filing)
-        metadata = {
-            "cik": filing.cik,
-            "accession_number": filing.accession_number,
-            "date_filed": filing.date_filed,
-            "chunk_algo_version": chunk_algo_version,
-        }
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
         new_chunks.save()
         logger.info(
             f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number}"
         )
-        mark_job_done(job_id)
+        delete_lock(lock_blob_path)
         return new_chunks
 
 
