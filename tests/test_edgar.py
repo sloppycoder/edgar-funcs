@@ -71,16 +71,3 @@ def test_load_filing_catalog():
     # from pympler import asizeof
     # mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
     # print(f"loaded catalog , used memory {mem_used:.2f} MB")
-
-
-@pytest.mark.skip(reason="local testing only")
-def test_parse_one_filing():
-    # this file has 2 documents of type 485BPOS, one htm another pdf
-    # cik, accession_number = "1141819", "0000894189-10-001730"
-    cik, accession_number = "1331971", "0000950123-10-116389"
-    filing = SECFiling(cik=cik, accession_number=accession_number)
-    html_path, html_content = filing.get_doc_content(
-        "485BPOS", file_types=["htm", "txt"]
-    )[0]
-
-    assert filing.cik == cik
