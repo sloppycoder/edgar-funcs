@@ -129,6 +129,9 @@ def mark_job_in_progress(
         collection_name (str): The Firestore collection name.
         ttl_hours (int): Time-to-Live in hours for the document.
     """
+    if job_id.startswith("single|"):
+        return True
+
     db = firestore.Client()
     doc_ref = db.collection(collection_name).document(job_id)
 
@@ -166,6 +169,9 @@ def mark_job_done(job_id: str, collection_name: str = "jobs_in_progress") -> boo
     Returns:
         bool: True if the document was deleted, False if it did not exist.
     """
+    if job_id.startswith("single|"):
+        return True
+
     db = firestore.Client()
     doc_ref = db.collection(collection_name).document(job_id)
 
