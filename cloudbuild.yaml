@@ -2,7 +2,7 @@ substitutions:
   _SM_PROJECT_ID: "edgar-ai"
   _REGION: "us-central1"
   _RUNTIME: "python312"
-  _EXTRACTION_RESULT_TOPIC: "extraction-result"
+  _EXTRACTION_RESULT_TOPIC: "edgarai-extraction-result"
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs"
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
