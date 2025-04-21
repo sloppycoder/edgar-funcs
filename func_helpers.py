@@ -141,7 +141,7 @@ def write_lock(blob_path: str, validity: int = 900) -> bool:
 
     if lock_blob.exists():
         try:
-            old_content = lock_blob.download_as_string()
+            old_content = lock_blob.download_as_bytes()
             old_ts = json.loads(old_content).get("created_at", "1971-01-01T00:00:00")
         except json.JSONDecodeError:
             # lock file exists but content is not valid JSON
