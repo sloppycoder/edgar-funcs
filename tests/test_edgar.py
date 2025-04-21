@@ -2,7 +2,7 @@ import io
 from unittest.mock import patch
 
 import pandas as pd
-import pytest
+import pytest  # noqa F401
 
 from edgar_funcs.edgar import (
     SECFiling,
@@ -76,9 +76,11 @@ def test_load_filing_catalog():
 @pytest.mark.skip(reason="local testing only")
 def test_parse_one_filing():
     # this file has 2 documents of type 485BPOS, one htm another pdf
-    filing = SECFiling(cik="1141819", accession_number="0000894189-10-001730")
+    # cik, accession_number = "1141819", "0000894189-10-001730"
+    cik, accession_number = "1331971", "0000950123-10-116389"
+    filing = SECFiling(cik=cik, accession_number=accession_number)
     html_path, html_content = filing.get_doc_content(
         "485BPOS", file_types=["htm", "txt"]
     )[0]
 
-    assert filing.cik == "1141819"
+    assert filing.cik == cik
