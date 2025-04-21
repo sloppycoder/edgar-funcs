@@ -178,7 +178,7 @@ class SECFiling:
         return "", []
 
     def _read_index(self) -> tuple[str, list[dict[str, Any]]]:
-        """read the index.html file and extract the documents"""
+        """read the index.html file and extract the document list form html table"""
 
         content = edgar_file(self.index_html_path)
         if not content:

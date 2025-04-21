@@ -164,13 +164,9 @@ def chunk_filing_and_save_embedding(
     embedding_model: str,
     embedding_dimension: int,
     chunk_algo_version: str,
-    refresh: bool = False,
     **_,  # ignore any other parameters
 ) -> tuple[bool, TextChunksWithEmbedding]:
     try:
-        if refresh:
-            raise ValueError("refresh is True")
-
         existing_chunks = TextChunksWithEmbedding.load(
             cik=cik,
             accession_number=accession_number,
