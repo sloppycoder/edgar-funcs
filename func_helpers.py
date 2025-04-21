@@ -110,7 +110,7 @@ def insert_into_firestore(collection_name: str, data: dict):
     db = firestore.Client()
     collection_ref = db.collection(collection_name)
     collection_ref.add(data)
-    logger.info(f"Inserted data into Firestore collection '{collection_name}': {data}")
+    logger.debug(f"Inserted data into Firestore collection '{collection_name}': {data}")
 
 
 def mark_job_in_progress(
