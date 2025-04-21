@@ -73,7 +73,9 @@ def _chunk_and_get_embeddings(cik: str, accession_number: str, chunk_algo_versio
         cik=cik,
         accession_number=accession_number,
     )
-    filing_path, filing_content = filing.get_doc_content("485BPOS", max_items=1)[0]
+    filing_path, filing_content = filing.get_doc_content(
+        "485BPOS", file_types=["htm", "txt"]
+    )[0]
 
     assert filing_path.endswith(".htm")
 

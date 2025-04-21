@@ -30,7 +30,9 @@ def test_parse_idx_filename():
 def test_parse_485bpos_filing():
     with patch("edgar_funcs.edgar.edgar_file", side_effect=mock_file_content):
         filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
-        html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
+        html_path, html_content = filing.get_doc_content(
+            "485BPOS", file_types=["htm", "txt"]
+        )[0]
 
         assert filing.cik == "1002427" and filing.date_filed == "2024-04-29"
         assert filing.accession_number == "0001133228-24-004879"
@@ -48,7 +50,9 @@ def test_parse_old_485bpos_filing():
             accession_number="0000950136-04-001365",
             prefer_index_headers=False,
         )
-        html_path, html_content = filing.get_doc_content("485BPOS", max_items=1)[0]
+        html_path, html_content = filing.get_doc_content(
+            "485BPOS", file_types=["htm", "txt"]
+        )[0]
 
         assert filing.cik == "1201932" and filing.date_filed == "2004-04-30"
         assert filing.accession_number == "0000950136-04-001365"
@@ -67,3 +71,14 @@ def test_load_filing_catalog():
     # from pympler import asizeof
     # mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
     # print(f"loaded catalog , used memory {mem_used:.2f} MB")
+
+
+@pytest.mark.skip(reason="local testing only")
+def test_parse_one_filing():
+    # this file has 2 documents of type 485BPOS, one htm another pdf
+    filing = SECFiling(cik="1141819", accession_number="0000894189-10-001730")
+    html_path, html_content = filing.get_doc_content(
+        "485BPOS", file_types=["htm", "txt"]
+    )[0]
+
+    assert filing.cik == "1141819"

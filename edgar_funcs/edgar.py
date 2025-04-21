@@ -114,22 +114,19 @@ class SECFiling:
             raise InvalidFilingExceptin(
                 f"{self.idx_filename} does not contain a {doc_type} document"
             )
-
-        if len(paths) > 1:
-            raise InvalidFilingExceptin(
-                f"{self.idx_filename} has more than 1 document of type {doc_type}"
-            )
-
         return [str(Path(self.index_headers_path).parent / path) for path in paths]
 
-    def get_doc_content(self, doc_type: str, max_items: int = 1) -> list[tuple[str, str]]:
+    def get_doc_content(
+        self, doc_type: str, file_types: list[str]
+    ) -> list[tuple[str, str]]:
         result = []
         for doc_path in self.get_doc_path(doc_type):
+            doc_type = doc_path.split(".")[-1]
+            if doc_type not in file_types:
+                continue
             content = edgar_file(doc_path)
             if content:
                 result.append((doc_path, content))
-                if len(result) >= max_items:
-                    break
         return result
 
     def _read_index_headers(self) -> tuple[str, list[dict[str, Any]]]:

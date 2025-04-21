@@ -139,7 +139,7 @@ def chunk_filing(filing: SECFiling, method: str = "spacy") -> list[str]:
     if method != "spacy":
         raise ValueError(f"Unsupported chunking method {method}")
 
-    path, content = filing.get_doc_content("485BPOS", max_items=1)[0]
+    path, content = filing.get_doc_content("485BPOS", file_types=["htm", "txt"])[0]
     text_content = None
 
     if path.endswith((".html", ".htm")):
