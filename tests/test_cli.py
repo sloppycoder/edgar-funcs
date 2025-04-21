@@ -9,7 +9,7 @@ from edgar_funcs.edgar import load_filing_catalog
 
 @pytest.fixture
 def mock_publish_request():
-    with patch("cli._publish_message") as mock:
+    with patch("cli._publish_messages") as mock:
         yield mock
 
 
@@ -52,9 +52,10 @@ def test_trustee_sample(mock_publish_request, monkeypatch):
         "sys.argv", shlex.split("cli.py trustee 1 --start 2024-01-01 --end 2024-12-31")
     )
     main()
-    assert mock_publish_request.call_count >= 13 and mock_publish_request.call_count <= 15
+    assert mock_publish_request.call_count == 1
     for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "trustee"
+        assert len(call_args[0][0]) >= 13 and len(call_args[0][0]) <= 15
+        assert call_args[0][0][0]["action"] == "trustee"
 
 
 def test_fundmgr_list(mock_publish_request, monkeypatch):
@@ -65,9 +66,10 @@ def test_fundmgr_list(mock_publish_request, monkeypatch):
         ),
     )
     main()
-    assert mock_publish_request.call_count == 4
+    assert mock_publish_request.call_count == 1
     for call_args in mock_publish_request.call_args_list:
-        assert call_args[0][0]["action"] == "fundmgr"
+        assert len(call_args[0][0]) == 4
+        assert call_args[0][0][0]["action"] == "fundmgr"
 
 
 def test_invalid_accession_number(mock_publish_request, monkeypatch):

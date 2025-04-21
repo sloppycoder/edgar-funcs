@@ -94,6 +94,14 @@ def print_stats(batch_id: str):
     """
     Count the number of records in a Firestore collection filtered by batch_id.
     """
+
+    match = re.search(r"\d{14}-[a-z]{3}", batch_id.strip())
+    if match:
+        batch_id = match.group(0)
+    else:
+        print(f"Invalid batch_id format: {batch_id}")
+        return
+
     db = firestore.Client()
     collection_name = os.getenv("EXTRACTION_RESULT_COLLECTION", "extraction_result")
     query = db.collection(collection_name).where(
