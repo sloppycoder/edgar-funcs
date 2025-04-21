@@ -266,7 +266,7 @@ def main():
         url = os.getenv("EDGAR_PROCESSOR_URL", "")
         todo_list[0]["batch_id"] = "single"
         result = send_cloud_run_request(url, payload_func(**todo_list[0]))
-        print(f"response->\n{result['response']}")
+        print(f"response->\n{result}")
 
 
 if __name__ == "__main__":
