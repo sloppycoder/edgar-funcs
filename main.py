@@ -160,7 +160,7 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
 
 
 def _publish_result(result: dict):
-    id = f"{result['action']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
+    id = f"{result['extraction_type']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
     result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
     if result_topic:
         publish_message(result, result_topic)
