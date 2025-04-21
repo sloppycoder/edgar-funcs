@@ -4,7 +4,7 @@ substitutions:
   _RUNTIME: "python312"
   _EXTRACTION_RESULT_COLLECTION: "extraction_result"
   _STORAGE_PREFIX: "gs://edgar_666/edgar-funcs"
-  _LOG_LEVEL: "DEBUG"
+  _LOG_LEVEL: "INFO"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
   _OPENAI_API_KEY_SECRET: "projects/1049830028293/secrets/openai-api-key:latest"
   _DOCKER_IMAGE: "gcr.io/edgar-ai/edgar-processor"
