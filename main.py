@@ -160,9 +160,10 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
 
 
 def _publish_result(result: dict):
-    id = f"{result['extraction_type']}/{result['batch_id']}/{result['cik']}/{result['accession_number']}"  # noqa E501
+    batch_id = result["batch_id"]
+    id = f"{result['extraction_type']}/{batch_id}/{result['cik']}/{result['accession_number']}"  # noqa E501
     result_topic = os.environ.get("EXTRACTION_RESULT_TOPIC")
-    if result_topic:
+    if result_topic and not batch_id.startswith("single"):
         publish_message(result, result_topic)
         logger.info(f"result for {id} published to {result_topic}")
     else:
