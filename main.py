@@ -1,12 +1,14 @@
 import logging
 import os
 import traceback
+from typing import Any
 
 from flask import Flask, jsonify, request
 
+from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filing
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
-from edgar_funcs.rag.vectorize import chunk_filing_and_save_embedding
+from edgar_funcs.rag.vectorize import TextChunksWithEmbedding, chunk_filing
 from func_helpers import (
     decode_request,
     insert_into_firestore,
@@ -32,82 +34,131 @@ def req_processor():
 
         logger.info(f"Received request for {data}")
 
+        # check if request action is valid
         action = data.get("action")
         if action not in ["chunk", "trustee", "fundmgr"]:
             logger.info(f"Unknown action {action}")
-            return jsonify({"message": f"Unknown action: {action}"}), 200
+            return jsonify({"error": f"Unknown action: {action}"}), 200
 
-        job_id = f"{data['batch_id']}|{data['cik']}|{data['accession_number']}"
+        # check if request has batch_id, cik and accession_number
+        batch_id = data.get("batch_id")
+        cik = data.get("cik")
+        accession_number = data.get("accession_number")
+
+        if not cik or not accession_number or not batch_id:
+            logger.info(f"Invalid request parameters {data}")
+            return jsonify({"error": f"Invalid request parameters {data}"}), 200
+
+        # mark job before long running process
+        job_id = f"{batch_id}|{cik}|{accession_number}"
         if not mark_job_in_progress(job_id):
-            logger.info(f"Job {job_id} is already in progress, skipping.")
-            return jsonify(
-                {"message": f"Job {job_id} is already in progress, skipping."}
-            ), 200
+            logger.info(f"Job {job_id} is already in progress, skipping")
+            return jsonify({"error": f"Job {job_id} is already in progress"}), 200
 
-        # step 1: chunk the filing and save the embedding always
-        is_reuse, chunks = chunk_filing_and_save_embedding(**data)
-        if is_reuse:
-            logger.info(f"re-use existing {len(chunks.texts)} chunks for {data}")
-        else:
-            logger.info(f"created new {len(chunks.texts)} chunks for {data}")
+        # step 1: check if text chunks and embeddings already exists
+        chunks = _retrieve_chunks_for_filing(**data)
 
-        extraction_result = {
-            "batch_id": data.get("batch_id", ""),
-            "cik": data.get("cik", "0"),
-            "company_name": data.get("company_name", "test company"),
-            "accession_number": data.get("accession_number", "0000000000-00-000000"),
-            "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
-            "model": data["model"],
-            "extraction_type": action,
-            "selected_chunks": [],
-            "selected_text": "N/A",
-            "response": "N/A",
-        }
-
-        # step2: perform =extraction if action is trustee or fundmgr
-        if action == "trustee":
-            result = extract_trustee_comp_from_filing(**data)
-            if result:
-                logger.info(
-                    f"extraction with {data} found {result['n_trustee']} trustees"
-                )
-                extraction_result["selected_chunks"] = result["selected_chunks"]
-                extraction_result["selected_text"] = result["selected_text"]
-                extraction_result["response"] = result["response"]
-
-        elif action == "fundmgr":
-            result = extract_fundmgr_ownership_from_filing(**data)
-            if result:
-                logger.info(
-                    f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
-                )
-                extraction_result["selected_chunks"] = result["selected_chunks"]
-                extraction_result["selected_text"] = result["selected_text"]
-                extraction_result["response"] = result["response"]
-
-        else:
-            extraction_result["selected_chunks"] = []
-            extraction_result["selected_text"] = ""
-            extraction_result["response"] = ""
+        # step 2: perform extraction using LLM
+        data["date_filed"] = chunks.metadata.get("date_filed", "1971-01-01")
+        result = _perform_extraction(**data)
 
         # step 3: save the extraction result
-        _publish_result(extraction_result)
+        _publish_result(result)
 
-        # step 4: delete the job marker.
+        # lastly delete the job marker.
         # this will allow redelivery attempt to be processed
         mark_job_done(job_id)
 
-        return jsonify(extraction_result), 200
+        return jsonify(result), 200
 
     except Exception as e:
         error_msg = str(e)
         tb = traceback.format_exc()
         data = request.get_json()
         logger.error(f"chunking with {data} failed with {error_msg}\n{tb}")
-
         # must return 200 in order to indicate the message
         # has been processed
         return jsonify({"error": error_msg}), 200
+
+
+def _retrieve_chunks_for_filing(
+    cik: str,
+    accession_number: str,
+    embedding_model: str,
+    embedding_dimension: int,
+    chunk_algo_version: str,
+    **_,  # ignore any other parameters
+) -> TextChunksWithEmbedding:
+    try:
+        existing_chunks = TextChunksWithEmbedding.load(
+            cik=cik,
+            accession_number=accession_number,
+            model=embedding_model,
+            dimension=embedding_dimension,
+            chunk_algo_version=chunk_algo_version,
+        )
+        logger.info(
+            f"re-use {len(existing_chunks.texts)} chunks for {cik}/{accession_number}"
+        )
+        return existing_chunks
+    except ValueError:
+        filing = SECFiling(cik=cik, accession_number=accession_number)
+        text_chunks = chunk_filing(filing)
+        metadata = {
+            "cik": filing.cik,
+            "accession_number": filing.accession_number,
+            "date_filed": filing.date_filed,
+            "chunk_algo_version": chunk_algo_version,
+        }
+        new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
+        new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
+        new_chunks.save()
+        logger.info(
+            f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number}"
+        )
+        return new_chunks
+
+
+def _perform_extraction(data: dict) -> dict[str, Any]:
+    action = data.get("action")
+    extraction_result = {
+        "batch_id": data.get("batch_id", ""),
+        "cik": data.get("cik", "0"),
+        "company_name": data.get("company_name", "test company"),
+        "accession_number": data.get("accession_number", "0000000000-00-000000"),
+        "date_filed": data.get("date_filed", "1971-01-01"),
+        "model": data["model"],
+        "extraction_type": action,
+        "selected_chunks": [],
+        "selected_text": "N/A",
+        "response": "N/A",
+    }
+
+    # step 2: perform extraction if action is trustee or fundmgr
+    if action == "trustee":
+        result = extract_trustee_comp_from_filing(**data)
+        if result:
+            logger.info(f"extraction with {data} found {result['n_trustee']} trustees")
+            extraction_result["selected_chunks"] = result["selected_chunks"]
+            extraction_result["selected_text"] = result["selected_text"]
+            extraction_result["response"] = result["response"]
+
+    elif action == "fundmgr":
+        result = extract_fundmgr_ownership_from_filing(**data)
+        if result:
+            logger.info(
+                f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
+            )
+            extraction_result["selected_chunks"] = result["selected_chunks"]
+            extraction_result["selected_text"] = result["selected_text"]
+            extraction_result["response"] = result["response"]
+
+    else:
+        extraction_result["selected_chunks"] = []
+        extraction_result["selected_text"] = ""
+        extraction_result["response"] = ""
+
+    return extraction_result
 
 
 def _publish_result(result: dict):

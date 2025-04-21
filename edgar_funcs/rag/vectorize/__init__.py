@@ -158,38 +158,6 @@ def chunk_filing(filing: SECFiling, method: str = "spacy") -> list[str]:
     return chunks
 
 
-def chunk_filing_and_save_embedding(
-    cik: str,
-    accession_number: str,
-    embedding_model: str,
-    embedding_dimension: int,
-    chunk_algo_version: str,
-    **_,  # ignore any other parameters
-) -> tuple[bool, TextChunksWithEmbedding]:
-    try:
-        existing_chunks = TextChunksWithEmbedding.load(
-            cik=cik,
-            accession_number=accession_number,
-            model=embedding_model,
-            dimension=embedding_dimension,
-            chunk_algo_version=chunk_algo_version,
-        )
-        return True, existing_chunks
-    except ValueError:
-        filing = SECFiling(cik=cik, accession_number=accession_number)
-        text_chunks = chunk_filing(filing)
-        metadata = {
-            "cik": filing.cik,
-            "accession_number": filing.accession_number,
-            "date_filed": filing.date_filed,
-            "chunk_algo_version": chunk_algo_version,
-        }
-        new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
-        new_chunks.save()
-        return False, new_chunks
-
-
 def _blob_path(
     cik: str,
     accession_number: str,
