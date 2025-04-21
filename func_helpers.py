@@ -97,7 +97,7 @@ def send_cloud_run_request(url: str, payload: dict):
     pubsub_like_payload = {
         "message": {"data": base64.b64encode(payload_bytes).decode("utf-8")},
     }
-    response = requests.post(url, headers=headers, json=pubsub_like_payload)
+    response = requests.post(url, headers=headers, json=pubsub_like_payload, timeout=1000)
     if response.status_code == 200:
         return response.json()
     raise ValueError(f"response status {response.status_code}\n{response.text}")
