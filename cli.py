@@ -216,7 +216,7 @@ def parse_cli():
         if args.command == "stats":
             args.mode = "stats"
         else:
-            parser.error("Invalid accession number {args.arg1}")
+            parser.error(f"Invalid accession number {args.arg1}")
 
     return args
 
