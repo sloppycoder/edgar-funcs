@@ -156,6 +156,7 @@ def write_lock(blob_path: str, validity: int = 900) -> bool:
     expire_at = datetime.now() + timedelta(seconds=validity)
     content = {"created_at": expire_at.isoformat()}
     lock_blob.upload_from_string(json.dumps(content))
+    logger.debug(f"created lock {blob_path}")
     return True
 
 
@@ -163,6 +164,7 @@ def delete_lock(blob_path: str):
     lock_blob = _get_lock_blob(blob_path)
     if lock_blob:
         lock_blob.delete()
+        logger.debug(f"deleted lock {blob_path}")
 
 
 def _get_lock_blob(path: str):
