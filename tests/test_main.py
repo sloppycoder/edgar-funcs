@@ -17,7 +17,7 @@ def client():
 @patch("main._publish_result")
 @patch("main._perform_extraction")
 @patch("main._retrieve_chunks_for_filing")
-@patch("main._write_lock")
+@patch("main.write_lock")
 def test_req_processor_success(
     mock_write_lock,
     mock_retrieve_chunks,

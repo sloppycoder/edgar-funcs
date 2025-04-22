@@ -12,28 +12,26 @@ embedding_model, embedding_dimension, extraction_model = (
 )
 
 
-def test_extract_fundmgr_ownership():
+@patch("edgar_funcs.rag.extract.fundmgr.ask_model")
+def test_extract_fundmgr_ownership(mock_ask_model):
     cik, accession_number, chunk_algo_version = "1002427", "0001133228-24-004879", "4"
 
     mock_response = (
         f"response/{extraction_model}/{cik}/{accession_number}_fundmgr_ownership.txt"
     )
-    with patch(
-        "edgar_funcs.rag.extract.fundmgr.ask_model",
-        return_value=mock_file_content(mock_response),
-    ):
-        result = extract_fundmgr_ownership_from_filing(
-            cik=cik,
-            accession_number=accession_number,
-            embedding_model=embedding_model,
-            embedding_dimension=embedding_dimension,
-            model=extraction_model,
-            chunk_algo_version=chunk_algo_version,
-        )
-        assert result and result["ownership_info"]
-        managers = result["ownership_info"]["managers"]
-        assert len(managers) == 6
-        assert (
-            managers[0]["name"] == "Dennis P. Lynch"
-            and managers[0]["ownership_range"] == "Over 1,000,000"
-        )
+    mock_ask_model.return_value = mock_file_content(mock_response)
+    result = extract_fundmgr_ownership_from_filing(
+        cik=cik,
+        accession_number=accession_number,
+        embedding_model=embedding_model,
+        embedding_dimension=embedding_dimension,
+        model=extraction_model,
+        chunk_algo_version=chunk_algo_version,
+    )
+    assert result and result["ownership_info"]
+    managers = result["ownership_info"]["managers"]
+    assert len(managers) == 6
+    assert (
+        managers[0]["name"] == "Dennis P. Lynch"
+        and managers[0]["ownership_range"] == "Over 1,000,000"
+    )

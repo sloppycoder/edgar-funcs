@@ -14,32 +14,33 @@ from tests.utils import mock_file_content, mock_json_dict
 embedding_model, embedding_dimension = "text-embedding-005", 768
 
 
-def test_one_filing_chunk_save_load():
+@patch("edgar_funcs.edgar.edgar_file")
+@patch("edgar_funcs.rag.vectorize.batch_embedding")
+def test_one_filing_chunk_save_load(mock_batch_embedding, mock_edgar_file):
     """
     full lifecycle of a filing
     download, chunk, get embedding, save and load
     """
-    with patch("edgar_funcs.edgar.edgar_file", side_effect=mock_file_content):
-        filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
-        text_chunks = chunk_filing(filing)
-        assert text_chunks
+    mock_edgar_file.side_effect = mock_file_content
+    mock_batch_embedding.return_value = mock_json_dict(
+        f"embeddings/{embedding_model}_{embedding_dimension}/1002427/0001133228-24-004879.json"
+    )
 
-    mock_json_path = f"embeddings/{embedding_model}_{embedding_dimension}/1002427/0001133228-24-004879.json"  # noqa E501
-    with patch(
-        "edgar_funcs.rag.vectorize.batch_embedding",
-        return_value=mock_json_dict(mock_json_path),
-    ):
-        chunks = TextChunksWithEmbedding(
-            text_chunks,
-            metadata={
-                "cik": filing.cik,
-                "accession_number": filing.accession_number,
-                "date_filed": filing.date_filed,
-                "chunk_algo_version": CHUNK_ALORITHM_VERSION,
-            },
-        )
-        chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
-        assert chunks.is_ready() and chunks.save() is None
+    filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
+    text_chunks = chunk_filing(filing)
+    assert text_chunks
+
+    chunks = TextChunksWithEmbedding(
+        text_chunks,
+        metadata={
+            "cik": filing.cik,
+            "accession_number": filing.accession_number,
+            "date_filed": filing.date_filed,
+            "chunk_algo_version": CHUNK_ALORITHM_VERSION,
+        },
+    )
+    chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
+    assert chunks.is_ready() and chunks.save() is None
 
     restored_chunks = TextChunksWithEmbedding.load(
         cik="1002427",
