@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
 import google.auth
@@ -122,6 +122,10 @@ def publish_message(message: dict, topic_name: str):
     if gcp_proj_id and topic_name:
         publisher = create_publisher()
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
+
+        if "created_at" not in message:
+            now_str = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+            message["created_at"] = now_str.replace("+00:00", "Z")  # convert to bq format
 
         content = json.dumps(message).encode("utf-8")
         future = publisher.publish(topic_path, content)
