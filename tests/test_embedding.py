@@ -6,7 +6,6 @@ from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.vectorize import (
     TextChunksWithEmbedding,
     _storage_prefix,
-    chunk_filing,
 )
 from edgar_funcs.rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content, mock_json_dict
@@ -27,7 +26,9 @@ def test_one_filing_chunk_save_load(mock_batch_embedding, mock_edgar_file):
     )
 
     filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")
-    text_chunks = chunk_filing(filing)
+    # text_chunks = chunk_filing(filing)
+    # chunk_filings runs too slow, use mock data instead
+    text_chunks = mock_json_dict("chunking/4/1002427/0001133228-24-004879.json")
     assert text_chunks
 
     chunks = TextChunksWithEmbedding(
