@@ -5,6 +5,7 @@ import os
 import random
 import re
 import string
+import sys
 from datetime import datetime
 from functools import partial
 from typing import Any, Hashable
@@ -37,8 +38,6 @@ def _publish_messages(messages: list[dict], topic_name: str):
         # Ensure all publishes succeed
         for future in futures:
             future.result()
-    else:
-        print(f"Invalid topic {topic_name} or project {gcp_proj_id}")
 
 
 def _batch_id() -> str:
@@ -121,44 +120,42 @@ def print_stats(batch_id: str):
     )
 
 
-def batch_request(todo_list: list[dict[Hashable, Any]], payload_func):
+def batch_request(todo_list: list[dict[Hashable, Any]], topic: str, payload_func):
     batch_id = _batch_id()
-    n_total, n_processed = len(todo_list), 0
+    n_processed = 0
 
-    output_file = f"tmp/{batch_id}.csv"
     messages = []
-    with open(output_file, "w", newline="") as f:
-        fieldnames = ["batch_id", "cik", "company_name", "accession_number"]
-        writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
-        writer.writeheader()
-        for row in todo_list:
-            cik = str(row["cik"])
-            accession_number = str(row["accession_number"])
-            company_name = row["company_name"].strip()  # pyright: ignore
-            writer.writerow(
-                {
-                    "batch_id": batch_id,
-                    "cik": cik,
-                    "company_name": company_name,
-                    "accession_number": accession_number,
-                }
-            )
-            data = payload_func(
-                batch_id=batch_id,
-                cik=cik,
-                company_name=company_name,
-                accession_number=accession_number,
-            )
-            messages.append(data)
-            print(f"filing={cik:>8}/{accession_number}")
+    fieldnames = ["batch_id", "cik", "company_name", "accession_number"]
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+    for row in todo_list:
+        cik = str(row["cik"])
+        accession_number = str(row["accession_number"])
+        company_name = row["company_name"].strip()  # pyright: ignore
+        writer.writerow(
+            {
+                "batch_id": batch_id,
+                "cik": cik,
+                "company_name": company_name,
+                "accession_number": accession_number,
+            }
+        )
+        data = payload_func(
+            batch_id=batch_id,
+            cik=cik,
+            company_name=company_name,
+            accession_number=accession_number,
+        )
+        messages.append(data)
 
-            n_processed += 1
+        n_processed += 1
 
-    if messages:
-        _publish_messages(messages, os.getenv("REQUEST_TOPIC", ""))
+    if messages and not topic.startswith("_"):
+        _publish_messages(messages, topic)
 
     print(
-        f"Requested {n_processed} filings out of {n_total}, list saved to {output_file}"
+        f"Requested {n_processed} filings to topic {topic}, output written to stdout",
+        file=sys.stderr,
     )
 
 
@@ -210,6 +207,12 @@ def parse_cli():
         default="gemini-2.0-flash",
         help="Model to use for extraction (default: gemini-2.0-flash)",
     )
+    parser.add_argument(
+        "--topic",
+        type=str,
+        default="edgarai-request",
+        help="Pub/Sub topic to publish request messages to, use any value begins with _ for skipping publishing the request messages",  # noqa E501
+    )
     args = parser.parse_args()
 
     if re.match(r"^\d{10}-\d{2}-\d{6}$", args.arg1):
@@ -234,6 +237,8 @@ def main():
         print_stats(args.arg1)
         return
 
+    # _request_payload is shared between batch_request and single request
+    # create a partial in order to avoid passing too many parameters
     payload_func = partial(
         _request_payload,
         action=args.command,
@@ -245,13 +250,18 @@ def main():
     if args.mode == "list":
         df_todo = pd.read_csv(args.arg1)
     elif args.mode == "sample":
+        # sample a percentage of companies
+        # and process filing for those companies within the period
         df_filings = load_filing_catalog(args.start, args.end)
-        df_todo = df_filings.sample(frac=float(args.arg1) / 100)
+        unique_ciks = df_filings["cik"].unique()
+        sampled_ciks = pd.Series(unique_ciks).sample(frac=float(args.arg1) / 100)
+        df_todo = df_filings[df_filings["cik"].isin(sampled_ciks)]
         if len(df_todo) == 0:
             print("No filings to process")
             return
     elif args.mode == "accession_number":
-        df_filings = load_filing_catalog("2000-01-01", "2025-01-01")  # all the entries
+        # check accession_number aginst all the entries in the catalog
+        df_filings = load_filing_catalog("2000-01-01", "2025-01-01")
         df_todo = df_filings[df_filings["accession_number"] == args.arg1]
         if df_todo.empty:
             print(f"Accession number {args.arg1} not found in the catalog.")
@@ -263,16 +273,25 @@ def main():
     todo_list: [str, Any] = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
         orient="records"
     )
+    # batch request mode, publishes messages to Pub/Sub topic
     if len(todo_list) > 1:
         batch_request(
             todo_list=todo_list,
+            topic=args.topic,
             payload_func=payload_func,
         )
     else:
-        url = os.getenv("EDGAR_PROCESSOR_URL", "")
-        todo_list[0]["batch_id"] = "single"
-        result = send_cloud_run_request(url, payload_func(**todo_list[0]))
-        print(f"response->\n{result}")
+        # single request mode, send HTTP request to Cloud Run
+        url = os.getenv("CLI_EDGAR_PROCESSOR_URL", "")
+        if url:
+            todo_list[0]["batch_id"] = "single"
+            result = send_cloud_run_request(url, payload_func(**todo_list[0]))
+            print(f"response->\n{result}")
+        else:
+            print(
+                "No URL provided for single request. "
+                + "Please set the CLI_EDGAR_PROCESSOR_URL environment variable."
+            )
 
 
 if __name__ == "__main__":

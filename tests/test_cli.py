@@ -7,22 +7,10 @@ from cli import main
 from edgar_funcs.edgar import load_filing_catalog
 
 
-@pytest.fixture
-def mock_publish_request():
-    with patch("cli._publish_messages") as mock:
-        yield mock
-
-
-@pytest.fixture
-def mock_send_cloud_run_request():
-    with patch("cli.send_cloud_run_request") as mock:
-        yield mock
-
-
+@patch("cli._publish_messages")
+@patch("cli.send_cloud_run_request")
 def test_chunk_accession_number(
-    mock_publish_request,
-    mock_send_cloud_run_request,
-    monkeypatch,
+    mock_send_cloud_run_request, mock_publish_request, monkeypatch
 ):
     monkeypatch.setattr(
         "sys.argv",
@@ -47,6 +35,7 @@ def test_chunk_accession_number(
     )
 
 
+@patch("cli._publish_messages")
 def test_trustee_sample(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
         "sys.argv", shlex.split("cli.py trustee 1 --start 2024-01-01 --end 2024-12-31")
@@ -54,10 +43,20 @@ def test_trustee_sample(mock_publish_request, monkeypatch):
     main()
     assert mock_publish_request.call_count == 1
     for call_args in mock_publish_request.call_args_list:
-        assert len(call_args[0][0]) >= 13 and len(call_args[0][0]) <= 15
+        # since we sample companies now the number of filings cannot be determined
+        assert len(call_args[0][0]) >= 1
         assert call_args[0][0][0]["action"] == "trustee"
 
 
+@patch("cli._publish_messages")
+def test_trustee_sample_dryrun(mock_publish_request, monkeypatch):
+    # passing _ as topic will skip publishing the requests
+    monkeypatch.setattr("sys.argv", shlex.split("cli.py trustee 1 --topic _"))
+    main()
+    assert mock_publish_request.call_count == 0
+
+
+@patch("cli._publish_messages")
 def test_fundmgr_list(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -72,6 +71,7 @@ def test_fundmgr_list(mock_publish_request, monkeypatch):
         assert call_args[0][0][0]["action"] == "fundmgr"
 
 
+@patch("cli._publish_messages")
 def test_invalid_accession_number(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -83,13 +83,14 @@ def test_invalid_accession_number(mock_publish_request, monkeypatch):
     mock_publish_request.assert_not_called()
 
 
-def test_print_stats(monkeypatch):
+@patch("cli.print_stats")
+def test_print_stats(mock_print_stats, monkeypatch):
     monkeypatch.setattr("sys.argv", shlex.split("cli.py stats 20250420142007-lgh"))
-    with patch("cli.print_stats") as mock:
-        main()
-    mock.assert_called_once_with("20250420142007-lgh")
+    main()
+    mock_print_stats.assert_called_once_with("20250420142007-lgh")
 
 
+@patch("cli._publish_messages")
 def test_non_existent_accession_number(mock_publish_request, monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
