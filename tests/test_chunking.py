@@ -1,4 +1,7 @@
+import os
 from unittest.mock import patch
+
+import pytest
 
 from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.vectorize import TextChunksWithEmbedding
@@ -8,6 +11,9 @@ from edgar_funcs.rag.vectorize.chunking import (
     trim_html_content,
 )
 from tests.utils import mock_file_content
+
+if "BUILD_ID" in os.environ:
+    pytest.skip("chunking tests are too slow to run in Cloud Build")
 
 
 @patch("edgar_funcs.edgar.edgar_file")
