@@ -18,7 +18,7 @@ A CLI utility is provided that writes requests into the Request topic.
 |                   |       |                   |       |                   |
 |   Request Topic   |------>|   Processor       |------>|   Result Topic    |
 |   (Pub/Sub)       | HTTP  |   (Cloud Run)     |publish|   (Pub/Sub)       |
-|                   | push  |                   |       |                   |
+|                   | push  |                   |result |                   |
 +-------------------+       +-------------------+       +-------------------+
         ^  publish                                              | subscription
         |  requests                                             V write to big query
