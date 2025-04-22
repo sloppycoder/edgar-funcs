@@ -1,5 +1,10 @@
 pyproject.toml
 uv.lock
+pyrightconfig.json
+MANIFEST.in
 tests/
 tmp/
-
+scripts/
+.vscode/
+REAMDE.md
+cli.py

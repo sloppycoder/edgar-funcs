@@ -7,4 +7,3 @@
 !requirements*.txt
 !*.py
 !edgar_funcs
-cli.py
