@@ -1,10 +1,10 @@
 import json
-import os
 import sys
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from google.cloud import storage  # Assuming GCS is used
+from google.api_core.exceptions import NotFound
+from google.cloud import storage
 
 from edgar_funcs.rag.vectorize import _storage_prefix
 
@@ -18,23 +18,28 @@ def find_locks(bucket_name: str, path: str, force_delete: bool = False):
 
     for blob in blobs:
         if blob.name.endswith("_lock.json"):
-            content = json.loads(blob.download_as_text())
-            expired_at = datetime.fromisoformat(content["expired_at"])
-            now = datetime.now(timezone.utc)
+            try:
+                content = json.loads(blob.download_as_text())
+                expired_at = datetime.fromisoformat(content["expires_at"])
+                now = datetime.now(timezone.utc)
 
-            if expired_at < now:
-                print(f"Deleting expired lock: {blob.name}")
-                blob.delete()
-            elif force_delete:
-                print(f"Force deleting lock: {blob.name}")
-                blob.delete()
-            else:
-                print(f"Lock not expired: {blob.name}, expires at {expired_at}")
+                if expired_at < now:
+                    print(f"Deleting expired lock: {blob.name}")
+                    blob.delete()
+                elif force_delete:
+                    print(f"Force deleting lock: {blob.name}")
+                    blob.delete()
+                else:
+                    print(f"Lock not expired: {blob.name}, expires at {expired_at}")
+            except KeyError:
+                print(f"Invalid lock file format: {blob.name}")
+            except NotFound:
+                pass
 
 
 if __name__ == "__main__":
     force_delete = len(sys.argv) > 1 and sys.argv[1] == "-d"
-    bucket_name, path = _storage_prefix(os.environ.get("STORAGE_PREFIX", ""))
+    bucket_name, path = _storage_prefix("gs://edgar_666/edgar-funcs")
     if bucket_name:
         find_locks(bucket_name, path)
     else:
