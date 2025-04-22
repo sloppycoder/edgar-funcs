@@ -22,7 +22,7 @@ steps:
       - |
         pip install --no-cache-dir -r requirements.txt
         pip install --no-cache-dir pytest pytest-dotenv pytest-mock pytest-cov
-        pytest -v tests/ --junitxml=/workspace/test-results.xml --ignore=tests/test_chunking.py --ignore=tests/test_cli.py
+        pytest -v tests/ --junitxml=/workspace/test-results.xml
 
   # Build Docker image
   - name: "gcr.io/cloud-builders/docker"

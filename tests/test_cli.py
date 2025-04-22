@@ -1,3 +1,4 @@
+import os
 import shlex
 from unittest.mock import ANY, patch
 
@@ -5,6 +6,9 @@ import pytest
 
 from cli import main
 from edgar_funcs.edgar import load_filing_catalog
+
+if "CLOUD_BUILD" in os.environ or "BUILDER_OUTPUT" in os.environ:
+    pytest.skip("CLI tests should not run in Cloud Build", allow_module_level=True)
 
 
 @patch("cli._publish_messages")

@@ -1,4 +1,7 @@
+import os
 from unittest.mock import patch
+
+import pytest
 
 from edgar_funcs.edgar import SECFiling
 from edgar_funcs.rag.vectorize import TextChunksWithEmbedding
@@ -8,6 +11,9 @@ from edgar_funcs.rag.vectorize.chunking import (
     trim_html_content,
 )
 from tests.utils import mock_file_content
+
+if "CLOUD_BUILD" in os.environ or "BUILDER_OUTPUT" in os.environ:
+    pytest.skip("CLI tests should not run in Cloud Build", allow_module_level=True)
 
 
 @patch("edgar_funcs.edgar.edgar_file")
