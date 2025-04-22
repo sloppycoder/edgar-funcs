@@ -124,8 +124,8 @@ def publish_message(message: dict, topic_name: str):
         topic_path = publisher.topic_path(gcp_proj_id, topic_name)
 
         if "created_at" not in message:
-            now_str = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
-            message["created_at"] = now_str.replace("+00:00", "Z")  # convert to bq format
+            # convert to big query format
+            message["created_at"] = _expires_after(0).replace("+00:00", "Z")
 
         content = json.dumps(message).encode("utf-8")
         future = publisher.publish(topic_path, content)
@@ -143,22 +143,21 @@ def write_lock(blob_path: str, validity: int = 900) -> bool:
     if not lock_blob:
         return False
 
+    ts_zero = "1971-01-01T00:00:00.000+00:00"
     if lock_blob.exists():
         try:
-            old_content = lock_blob.download_as_bytes()
-            old_ts = json.loads(old_content).get("created_at", "1971-01-01T00:00:00")
+            content = json.loads(lock_blob.download_as_text())
+            expires_at = content.get("expires_at", ts_zero)
         except json.JSONDecodeError:
             # lock file exists but content is not valid JSON
             # we'll just override it
-            old_ts = "1971-01-01T00:00:00"
+            expires_at = ts_zero
 
-        old_dt = datetime.fromisoformat(old_ts)
-        if old_dt > datetime.now():
+        if datetime.fromisoformat(expires_at) > datetime.now(timezone.utc):
             logger.info("Lock file is still valid.")
             return False
 
-    expire_at = datetime.now() + timedelta(seconds=validity)
-    content = {"created_at": expire_at.isoformat()}
+    content = {"expires_at": _expires_after(validity)}
     lock_blob.upload_from_string(json.dumps(content))
     logger.debug(f"created lock {blob_path}")
     return True
@@ -176,3 +175,8 @@ def _get_lock_blob(path: str):
     if bucket_name:
         bucket = gcs_client().bucket(bucket_name)
         return bucket.blob(f"{prefix}/{path}")
+
+
+def _expires_after(seconds: int) -> str:
+    timestamp = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    return timestamp.isoformat(timespec="milliseconds")
