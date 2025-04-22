@@ -24,6 +24,15 @@
             ]
         },
         {
+            "name": "current file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": []
+        },
+        {
             "name": "pytest",
             "type": "debugpy",
             "request": "launch",
