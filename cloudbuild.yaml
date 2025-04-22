@@ -13,7 +13,7 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # Run unit tests - disabled for performance
+  # Run unit tests - ignore slow chunking tests and irrelevant cli tests
   - name: "python:3.12"
     id: "run-tests"
     entrypoint: "bash"
@@ -21,8 +21,8 @@ steps:
       - "-c"
       - |
         pip install --no-cache-dir -r requirements.txt
-        pip install --no-cache-dir pytest pytest-dotenv pytest-mock pytest-cov pytest-asyncio
-        pytest -v tests/ --junitxml=/workspace/test-results.xml
+        pip install --no-cache-dir pytest pytest-dotenv pytest-mock pytest-cov
+        pytest -v tests/ --junitxml=/workspace/test-results.xml --ignore=tests/test_chunking.py --ignore=tests/test_cli.py
 
   # Build Docker image
   - name: "gcr.io/cloud-builders/docker"

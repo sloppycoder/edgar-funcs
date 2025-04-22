@@ -1,4 +1,3 @@
-import os
 import shlex
 from unittest.mock import ANY, patch
 
@@ -6,11 +5,6 @@ import pytest
 
 from cli import main
 from edgar_funcs.edgar import load_filing_catalog
-
-if "BUILD_ID" in os.environ:
-    pytest.skip(
-        "CLI is not used in Cloud Run and thus does not need to be tested during build"
-    )
 
 
 @patch("cli._publish_messages")
