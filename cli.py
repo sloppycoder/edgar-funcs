@@ -153,10 +153,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], topic: str, payload_func
     if messages and not topic.startswith("_"):
         _publish_messages(messages, topic)
 
-    print(
-        f"# Requested {n_processed} filings to topic {topic}",
-        file=sys.stderr,
-    )
+    print(f"# batch_id {batch_id}: {n_processed} requests sent to topic {topic}")
 
 
 def parse_cli():
