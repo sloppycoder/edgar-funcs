@@ -20,14 +20,9 @@ steps:
     args:
       - "-c"
       - |
-        # Use pip cache for faster installation
-        pip config set global.cache-dir /workspace/.pip_cache
         pip install --no-cache-dir -r requirements.txt
         pip install --no-cache-dir pytest pytest-dotenv pytest-mock pytest-cov pytest-asyncio
         pytest -v tests/ --junitxml=/workspace/test-results.xml
-    volumes:
-      - name: "pip_cache"
-        path: "/workspace/.pip_cache"
 
   # Build Docker image
   - name: "gcr.io/cloud-builders/docker"
