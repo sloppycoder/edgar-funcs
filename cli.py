@@ -154,7 +154,7 @@ def batch_request(todo_list: list[dict[Hashable, Any]], topic: str, payload_func
         _publish_messages(messages, topic)
 
     print(
-        f"Requested {n_processed} filings to topic {topic}, output written to stdout",
+        f"# Requested {n_processed} filings to topic {topic}",
         file=sys.stderr,
     )
 
@@ -217,7 +217,7 @@ def parse_cli():
 
     if re.match(r"^\d{10}-\d{2}-\d{6}$", args.arg1):
         args.mode = "accession_number"
-    elif args.arg1.isdigit():
+    elif args.arg1.replace(".", "", 1).isdigit():
         args.mode = "sample"
     elif args.arg1.endswith(".csv"):
         args.mode = "list"
@@ -270,17 +270,10 @@ def main():
         print("No accession number or percentage provided")
         return
 
-    todo_list: [str, Any] = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
+    todo_list: list[dict] = df_todo[["cik", "company_name", "accession_number"]].to_dict(  # pyright: ignore
         orient="records"
     )
-    # batch request mode, publishes messages to Pub/Sub topic
-    if len(todo_list) > 1:
-        batch_request(
-            todo_list=todo_list,
-            topic=args.topic,
-            payload_func=payload_func,
-        )
-    else:
+    if args.mode == "accession_number":
         # single request mode, send HTTP request to Cloud Run
         url = os.getenv("CLI_EDGAR_PROCESSOR_URL", "")
         if url:
@@ -288,10 +281,14 @@ def main():
             result = send_cloud_run_request(url, payload_func(**todo_list[0]))
             print(f"response->\n{result}")
         else:
-            print(
-                "No URL provided for single request. "
-                + "Please set the CLI_EDGAR_PROCESSOR_URL environment variable."
-            )
+            print("CLI_EDGAR_PROCESSOR_URL not setfor single request")
+    else:
+        # batch request mode, publishes messages to Pub/Sub topic
+        batch_request(
+            todo_list=todo_list,
+            topic=args.topic,
+            payload_func=payload_func,
+        )
 
 
 if __name__ == "__main__":
