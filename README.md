@@ -17,16 +17,18 @@ A CLI utility is provided that writes requests into the Request topic.
 +-------------------+       +-------------------+       +-------------------+
 |                   |       |                   |       |                   |
 |   Request Topic   |------>|   Processor       |------>|   Result Topic    |
-|   (Pub/Sub)       |       |   (Cloud Run)     |       |   (Pub/Sub)       |
-|                   |       |                   |       |                   |
-+-------+-----------+       +-------------------+       +-------------------+
-        ^ send                                                    |
-        | requests                                                v
+|   (Pub/Sub)       | HTTP  |   (Cloud Run)     |publish|   (Pub/Sub)       |
+|                   | push  |                   |       |                   |
++-------------------+       +-------------------+       +-------------------+
+        ^  publish                                              | subscription
+        |  requests                                             V write to big query
 +-------------------+                                   +-------------------+
 |                   |         query stats               |                   |
-|   CLI Utility     +<----------------------------------|   Result Table    |
-|                   |                                   |   (Big Query)     |
+|   CLI Utility     |<----------------------------------|   Result Table    |
+|   (cli.py)        |                                   |   (Big Query)     |
+|                   |                                   |                   |
 +-------------------+                                   +-------------------+
+
 ```
 
 ## Deploy
