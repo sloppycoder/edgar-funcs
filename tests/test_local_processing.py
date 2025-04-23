@@ -55,7 +55,12 @@ def test_full_extract_fundmgr_ownership():
         model=extraction_model,
         chunk_algo_version=chunk_algo_version,
     )
-    assert result and result["ownership_info"]
+    assert (
+        result
+        and result["ownership_info"]
+        and len(result["ownership_info"]["managers"]) == 7
+        and result["ownership_info"]["managers"][0]["name"] == "Scott Hill"
+    )
 
 
 @pytest.mark.skip(reason="local testing only")
