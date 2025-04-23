@@ -277,10 +277,11 @@ def load_filing_catalog(start_date: str, end_date: str) -> pd.DataFrame:
     )
     assert len(df_cik) > 1000
 
-    # Filter rows where 'cik' is in the interested CIK list
+    # Filter rows by date range and by interested CIK list
     interested_ciks = df_cik["cik"].astype(str).tolist()
-    df_filings = df_filings[
-        (df_filings["date_filed"] > start_date) & (df_filings["date_filed"] < end_date)
+    df_result = df_filings[
+        (df_filings["date_filed"] > start_date)
+        & (df_filings["date_filed"] < end_date)
+        & (df_filings["cik"].isin(interested_ciks))
     ]
-    df_result = df_filings[df_filings["cik"].isin(interested_ciks)]
     return df_result
