@@ -1,7 +1,5 @@
-import io
 from unittest.mock import patch
 
-import pandas as pd
 import pytest  # noqa F401
 
 from edgar_funcs.edgar import (
@@ -59,17 +57,3 @@ def test_parse_old_485bpos_filing(mock_edgar_file):
     assert len(filing.documents) == 9
     assert html_path.endswith("file001.txt")
     assert html_content and "N-1A" in html_content
-
-
-@patch("tests.utils.mock_file_content")
-def test_load_filing_catalog(mock_mock_file_content):
-    mock_mock_file_content.return_value = mock_file_content(
-        "../../edgar_funcs/data/catalog/all_485bpos_pd.pickle", is_binary=True
-    )
-    catalog_blob = mock_mock_file_content()
-    df_filings = pd.read_pickle(io.BytesIO(catalog_blob))
-    assert df_filings.size > 17000
-
-    # from pympler import asizeof
-    # mem_used = asizeof.asizeof(df_filings) / 1024 / 1024
-    # print(f"loaded catalog , used memory {mem_used:.2f} MB")

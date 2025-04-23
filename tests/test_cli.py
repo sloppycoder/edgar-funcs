@@ -109,5 +109,5 @@ def test_non_existent_accession_number(mock_publish_request, monkeypatch):
 
 def test_load_catalog():
     df_filings = load_filing_catalog("2000-01-01", "2024-12-31")
-    cik1_filings = df_filings[df_filings["cik"] == "1342947"]
-    assert len(cik1_filings) > 0
+    df_cik1 = df_filings[df_filings["cik"] == "1342947"]
+    assert len(df_cik1) > 0
