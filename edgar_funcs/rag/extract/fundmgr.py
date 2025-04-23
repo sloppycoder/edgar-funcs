@@ -239,7 +239,7 @@ def _ask_model_about_fundmgr_ownership(model: str, relevant_text: str) -> str | 
     response = ask_model(model, prompt)
     elapsed_t = datetime.now() - start_t
     logger.debug(
-        f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds()} seconds"  # noqa E501
+        f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
     )
 
     if response:

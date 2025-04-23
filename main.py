@@ -1,6 +1,7 @@
 import logging
 import os
 import traceback
+from datetime import datetime
 from typing import Any
 
 from flask import Flask, jsonify, request
@@ -104,14 +105,16 @@ def _retrieve_chunks_for_filing(
         if not write_lock(lock_blob_path):
             return None
 
+        start_t = datetime.now()
         filing = SECFiling(cik=cik, accession_number=accession_number)
         metadata["date_filed"] = filing.date_filed
         text_chunks = chunk_filing(filing)
         new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
         new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
         new_chunks.save()
+        elapsed_t = datetime.now() - start_t
         logger.info(
-            f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number}"
+            f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
         )
         delete_lock(lock_blob_path)
         return new_chunks

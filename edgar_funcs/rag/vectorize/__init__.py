@@ -68,7 +68,7 @@ class TextChunksWithEmbedding:
         self.embeddings = batch_embedding(self.texts, model=model, dimension=dimension)
         elapsed_t = datetime.now() - start_t
         logger.debug(
-            f"batch_embedding of {len(self.texts)} chunks of text with {model} took {elapsed_t.total_seconds()} seconds"  # noqa E501
+            f"batch_embedding of {len(self.texts)} chunks of text with {model} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
         )
         self.metadata["model"] = model
         self.metadata["dimension"] = dimension
@@ -153,7 +153,7 @@ def chunk_filing(filing: SECFiling, method: str = "spacy") -> list[str]:
     chunks = chunk_text(text_content, method=method)
     elapsed_t = datetime.now() - start_t
     logger.debug(
-        f"chunking {filing.cik}/{filing.accession_number} into {len(chunks)} chunks took {elapsed_t.total_seconds()} seconds"  # noqa E501
+        f"chunking {filing.cik}/{filing.accession_number} into {len(chunks)} chunks took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
     )
     return chunks
 
