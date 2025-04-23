@@ -22,7 +22,7 @@ def load_master_idx(
                 io.StringIO(content),
                 sep="|",
                 skiprows=11,
-                names=["cik", "company_name", "form_type", "date_field", "idx_filename"],
+                names=["cik", "company_name", "form_type", "date_filed", "idx_filename"],
                 dtype=str,
             )
             idx_df = idx_df[idx_df["form_type"].isin(filing_types)]
