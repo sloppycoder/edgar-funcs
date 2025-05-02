@@ -20,7 +20,7 @@ on:
   push:
     branches:
       - develop
-      - main
+      # - main
 
   pull_request:
     branches:
@@ -64,6 +64,9 @@ jobs:
           if [[ -f "htmlcov/index.html" ]]; then
             echo "coverage_report=yes" >> $GITHUB_OUTPUT
           fi
+        env:
+          # just some value in order to make unit test pass
+          CLI_EDGAR_PROCESSOR_URL: "http://example.com"
 
       - name: Upload test coverage report to GitHub pages
         if: steps.unit_tests.outputs.coverage_report == 'yes'
