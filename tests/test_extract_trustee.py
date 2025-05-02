@@ -14,7 +14,7 @@ extract_func = partial(
 )
 
 
-@pytest.mark.parametrize("extraction_model", ["gemini-2.0-flash"])
+@pytest.mark.parametrize("extraction_model", ["gemini-2.0-flash", "gpt-4o-mini"])
 @patch("edgar_funcs.rag.extract.trustee.ask_model")
 def test_extract_html_filing(mock_ask_model, extraction_model):
     mock_ask_model.return_value = mock_file_content(
