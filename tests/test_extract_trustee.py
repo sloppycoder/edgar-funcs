@@ -1,24 +1,29 @@
+from functools import partial
 from unittest.mock import patch
+
+import pytest
 
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from tests.utils import mock_file_content
 
-embedding_model, embedding_dimension = "text-embedding-005", 768
-extraction_model = "gemini-1.5-flash-002"
+extract_func = partial(
+    extract_trustee_comp_from_filing,
+    embedding_model="text-embedding-005",
+    embedding_dimension=768,
+    chunk_algo_version="3",
+)
 
 
+@pytest.mark.parametrize("extraction_model", ["gemini-2.0-flash"])
 @patch("edgar_funcs.rag.extract.trustee.ask_model")
-def test_extract_html_filing(mock_ask_model):
+def test_extract_html_filing(mock_ask_model, extraction_model):
     mock_ask_model.return_value = mock_file_content(
-        "response/gemini-1.5-flash-002/1002427/0001133228-24-004879_trustee_comp.txt"
+        f"response/{extraction_model}/1002427/0001133228-24-004879_trustee_comp.txt"
     )
-    result = extract_trustee_comp_from_filing(
+    result = extract_func(
         cik="1002427",
         accession_number="0001133228-24-004879",
-        embedding_model=embedding_model,
-        embedding_dimension=embedding_dimension,
         model=extraction_model,
-        chunk_algo_version="3",
     )
     assert (
         result
@@ -28,18 +33,16 @@ def test_extract_html_filing(mock_ask_model):
     )
 
 
+@pytest.mark.parametrize("extraction_model", ["gpt-4o-mini", "gemini-2.0-flash"])
 @patch("edgar_funcs.rag.extract.trustee.ask_model")
-def test_extract_txt_filing(mock_ask_model):
+def test_extract_txt_filing(mock_ask_model, extraction_model):
     mock_ask_model.return_value = mock_file_content(
-        "response/gemini-1.5-flash-002/1201932/0000950136-04-001365.txt"
+        f"response/{extraction_model}/1201932/0000950136-04-001365_trustee_comp.txt"
     )
-    result = extract_trustee_comp_from_filing(
+    result = extract_func(
         cik="1201932",
         accession_number="0000950136-04-001365",
-        embedding_model=embedding_model,
-        embedding_dimension=embedding_dimension,
         model=extraction_model,
-        chunk_algo_version="3",
     )
     assert (
         result

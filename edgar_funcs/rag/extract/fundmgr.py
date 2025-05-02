@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, TypedDict
 
+from pydantic import BaseModel
+
 from ..vectorize import TextChunksWithEmbedding
 from .algo import (
     filter_chunks_with_keywords,
@@ -13,7 +15,7 @@ from .algo import (
     top_adjacent_chunks,
     top_chunks,
 )
-from .llm import ask_model, remove_md_json_wrapper
+from .llm import ask_model
 
 logger = logging.getLogger(__name__)
 
@@ -65,18 +67,6 @@ If the compensation information is not present in the snippet:
 1. Leave the list of managers empty.
 2. In the notes field, explain that the ownership information was not found in the given snippet.
 
-Provide your output in JSON format, as showsn in example below
-
-{
- "managers": [
-  {
-   "name": "portofolio manager's name or N/A",
-   "fund": "fund name if specified or N/A",
-   "ownership_range": "Dollar range extract from the filing or N/A",
-  }
- ],
- "notes": "Any additional information or explanations"
-}
 Please remove the leading $ sign from dollar range extracted
 
 Below is a snippet you need to analyze.
@@ -85,8 +75,19 @@ Below is a snippet you need to analyze.
 {SEC_FILING_SNIPPET}
 </sec_filing_snippet>
 
-
 """  # noqa: E501
+
+
+class ManagerOwnership(BaseModel):
+    name: str
+    fund: str
+    ownership_range: str
+
+
+class ManagerOwnershipResponse(BaseModel):
+    ownership_info_present: bool
+    managers: list[ManagerOwnership]
+    notes: str
 
 
 class FundManagerOwnership(TypedDict):
@@ -171,7 +172,13 @@ def _extract_fundmgr_ownership(
         if not relevant_text or len(relevant_text) < 100:
             continue
 
-        response = _ask_model_about_fundmgr_ownership(model, relevant_text)
+        start_t = datetime.now()
+        prompt = FUND_MGR_OWNERSHIP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
+        response = ask_model(model, prompt, responseModelClass=ManagerOwnershipResponse)
+        elapsed_t = datetime.now() - start_t
+        logger.debug(
+            f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
+        )
         if response:
             try:
                 ownership_info = json.loads(response)
@@ -231,18 +238,3 @@ def _find_relevant_text(
         raise ValueError(f"Unknown method: {method}")
 
     return selected_chunks, chunks.get_text_chunks(selected_chunks)
-
-
-def _ask_model_about_fundmgr_ownership(model: str, relevant_text: str) -> str | None:
-    start_t = datetime.now()
-    prompt = FUND_MGR_OWNERSHIP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
-    response = ask_model(model, prompt)
-    elapsed_t = datetime.now() - start_t
-    logger.debug(
-        f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
-    )
-
-    if response:
-        return remove_md_json_wrapper(response)
-
-    return None

@@ -1,7 +1,9 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Optional, TypedDict
+from typing import Any, Optional, Type, TypedDict
+
+from pydantic import BaseModel
 
 from ..vectorize import TextChunksWithEmbedding
 from .algo import (
@@ -11,7 +13,7 @@ from .algo import (
     relevance_by_distance,
     top_adjacent_chunks,
 )
-from .llm import ask_model, remove_md_json_wrapper
+from .llm import ask_model
 
 logger = logging.getLogger(__name__)
 
@@ -55,27 +57,25 @@ If the compensation information is not present in the snippet:
 If you find any additional relevant information or need to provide explanations about your analysis,
 include them in the notes field.
 
-Provide your output in JSON format, as showsn in example below
-
-{
- "compensation_info_present": true/false,
- "trustees": [
-  {
-   "year": "Year of Compensation",
-   "name": "name of the trustee or N/A",
-   "job_title": "the job title of the person who is a trustee. e.g. Commitee Chairperson",
-   "fund_compensation": "Amount or N/A",
-   "fund_group_compensation": "Amount or N/A",
-   "deferred_compensation": "Amount or N/A",
-   "other_compensation": {
-    "type": "Amount"
-   }
-  }
- ],
- "notes": "Any additional information or explanations"
-}
-Please remove the leading $ sign and comma from compensation Amount.
+Remove the leading $ sign and comma from compensation Amount.
 """  # noqa: E501
+
+
+class TrusteeCompensation(BaseModel):
+    year: str
+    name: str
+    job_title: str
+    fund_compensation: str
+    fund_group_compensation: str
+    deferred_compensation: str
+    other_compensation_type: Optional[str]
+    other_compensation_amount: Optional[str]
+
+
+class TrusteeCompensationResponse(BaseModel):
+    compensation_info_present: bool
+    trustees: list[TrusteeCompensation]
+    notes: str
 
 
 class TrusteeComp(TypedDict):
@@ -112,7 +112,12 @@ def extract_trustee_comp_from_filing(
     if chunks is None or queries is None:
         return None
 
-    result = _extract_trustee_comp(queries, chunks, model)
+    result = _extract_trustee_comp(
+        queries=queries,
+        chunks=chunks,
+        model=model,
+        responseModelClass=TrusteeCompensationResponse,
+    )
     return result
 
 
@@ -147,6 +152,7 @@ def _extract_trustee_comp(
     queries: TextChunksWithEmbedding,
     chunks: TextChunksWithEmbedding,
     model: str,
+    responseModelClass: Type[BaseModel],
 ) -> TrusteeComp | None:
     if not chunks.is_ready():
         raise ValueError("embedding data is not ready")
@@ -162,7 +168,13 @@ def _extract_trustee_comp(
             continue
 
         # step 4: send the relevant text to the LLM model with designed prompt
-        response = _ask_model_about_trustee_comp(model, relevant_text)
+        start_t = datetime.now()
+        prompt = TRUSTEE_COMP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
+        response = ask_model(model, prompt, responseModelClass)
+        elapsed_t = datetime.now() - start_t
+        logger.debug(
+            f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
+        )
         if response:
             try:
                 comp_info = json.loads(response)
@@ -206,18 +218,3 @@ def _find_relevant_text(
         raise ValueError(f"Unknown method: {method}")
 
     return selected_chunks, chunks.get_text_chunks(selected_chunks)
-
-
-def _ask_model_about_trustee_comp(model: str, relevant_text: str) -> str | None:
-    start_t = datetime.now()
-    prompt = TRUSTEE_COMP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
-    response = ask_model(model, prompt)
-    elapsed_t = datetime.now() - start_t
-    logger.debug(
-        f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
-    )
-
-    if response:
-        return remove_md_json_wrapper(response)
-
-    return None

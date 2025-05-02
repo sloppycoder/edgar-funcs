@@ -17,12 +17,13 @@ dependencies = [
     "google-cloud-logging>=3.11.4",
     "google-cloud-aiplatform>=1.84.0",
     "tiktoken>=0.9.0",
-    "openai>=1.66.3",
+    "openai>=1.76.2",
     "scipy>=1.15.2",
     "pandas>=2.2.3",
     "rank-bm25>=0.2.2",
     "flask>=2.3.3",
     "google-cloud-pubsub>=2.29.0",
+    "jsonref>=1.1.0",
 ]
 
 
@@ -82,3 +83,14 @@ select = [
     "A",
 ] # Enable checks for PEP8, imports, and other standard rules
 ignore = ["E203", "E266"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+env_files = [".env"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
