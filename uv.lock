@@ -332,10 +332,6 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-cli = [
-    { name = "db-dtypes" },
-    { name = "marimo" },
-]
 dev = [
     { name = "pre-commit" },
     { name = "pyright" },
@@ -344,6 +340,10 @@ dev = [
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
     { name = "ruff" },
+]
+notebook = [
+    { name = "db-dtypes" },
+    { name = "marimo" },
 ]
 
 [package.metadata]
@@ -368,10 +368,6 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-cli = [
-    { name = "db-dtypes", specifier = ">=1.4.2" },
-    { name = "marimo", specifier = ">=0.13.4" },
-]
 dev = [
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = "==1.1.399" },
@@ -380,6 +376,10 @@ dev = [
     { name = "pytest-dotenv", specifier = ">=0.5.2" },
     { name = "pytest-mock", specifier = ">=3.14" },
     { name = "ruff", specifier = ">=0.9.6" },
+]
+notebook = [
+    { name = "db-dtypes", specifier = ">=1.4.2" },
+    { name = "marimo", specifier = ">=0.13.4" },
 ]
 
 [[package]]

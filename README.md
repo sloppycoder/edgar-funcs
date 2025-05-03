@@ -61,11 +61,6 @@ GOOGLE_APPLICATION_CREDENTIALS=<servie account credetia>.json
 CLI_EDGAR_PROCESSOR_URL=https://YOUR_CLOUD_RUN_URL/process
 ```
 
-```shell
-# make sure to install cli depedencies in order to run cli commands
-uv sync --group cli
-```
-
 ### CLI Usage
 The CLI supports the following commands:
 1. **Chunk Filings**:
@@ -105,7 +100,7 @@ LIMIT 1000;
 ## Use Marimo to explore data
 ```shell
 # make sure to install cli depedencies in order to use marimo
-uv sync --group cli
+uv sync --group notebook
 ```
 
 # a notebook that is used to investigate extraction

@@ -38,9 +38,9 @@ dev = [
     "pyright==1.1.399",
 ]
 
-cli = [
-    "db-dtypes>=1.4.2",
+notebook = [
     "marimo>=0.13.4",
+    "db-dtypes>=1.4.2",
 ]
 
 [tool.setuptools]
