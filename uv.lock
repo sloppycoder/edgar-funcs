@@ -309,7 +309,7 @@ wheels = [
 
 [[package]]
 name = "edgar-funcs"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -334,12 +334,9 @@ dependencies = [
 [package.dev-dependencies]
 cli = [
     { name = "db-dtypes" },
-    { name = "google-cloud-bigquery" },
     { name = "marimo" },
 ]
 dev = [
-    { name = "db-dtypes" },
-    { name = "google-cloud-bigquery" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
@@ -373,12 +370,9 @@ requires-dist = [
 [package.metadata.requires-dev]
 cli = [
     { name = "db-dtypes", specifier = ">=1.4.2" },
-    { name = "google-cloud-bigquery", specifier = ">=3.30.0" },
     { name = "marimo", specifier = ">=0.13.4" },
 ]
 dev = [
-    { name = "db-dtypes", specifier = ">=1.4.2" },
-    { name = "google-cloud-bigquery", specifier = ">=3.30.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = "==1.1.399" },
     { name = "pytest", specifier = ">=8.3.0" },

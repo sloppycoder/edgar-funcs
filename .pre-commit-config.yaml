@@ -26,6 +26,13 @@ repos:
         files: ^pyproject\.toml$
         pass_filenames: false
 
+      - id: update-requirements-dev-txt
+        name: ensure requirements-dev.txt is up-to-date
+        entry: bash -c 'uv pip compile pyproject.toml --group dev -o requirements-dev.txt > /dev/null && git diff --exit-code requirements-dev.txt > /dev/null'
+        language: system
+        files: ^pyproject\.toml$
+        pass_filenames: false
+
       - id: pyright
         name: pyright
         entry: bash -c 'uv run pyright'

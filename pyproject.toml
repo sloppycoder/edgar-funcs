@@ -36,12 +36,9 @@ dev = [
     "pre-commit >= 4.0.1",
     "ruff >= 0.9.6",
     "pyright==1.1.399",
-    "google-cloud-bigquery>=3.30.0",
-    "db-dtypes>=1.4.2",
 ]
 
 cli = [
-    "google-cloud-bigquery>=3.30.0",
     "db-dtypes>=1.4.2",
     "marimo>=0.13.4",
 ]
