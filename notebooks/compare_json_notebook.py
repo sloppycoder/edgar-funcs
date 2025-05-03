@@ -15,12 +15,12 @@ def _():
     _columns_to_select = " batch_id, cik, accession_number, extraction_type, response, selected_chunks, model"
 
     # batch_id for trustees
-    _old_batch_id = "20250422004812-oxk"
-    _new_batch_id = "20250503013026-bbb"
+    # _old_batch_id = "20250422004812-oxk"
+    # _new_batch_id = "20250503013026-bbb"
 
     # batch_id for fundmgr
-    # _old_batch_id = "20250422002102-ynv"
-    # _new_batch_id = "20250503010430-nlu"
+    _old_batch_id = "20250422002102-ynv"
+    _new_batch_id = "20250503010430-nlu"
 
     df_compare = prep_compare_df(_old_batch_id, _new_batch_id)
     print(f"found {len(df_compare)} different rows")
