@@ -19,12 +19,10 @@
 on:
   push:
     branches:
-      - develop
-      # - main
+      - main
 
   pull_request:
     branches:
-      - develop
       - main
 
   workflow_dispatch:
@@ -62,7 +60,7 @@ jobs:
           uv run pytest -v -s --cov --cov-report=html
 
           if [[ -f "htmlcov/index.html" ]]; then
-            echo "coverage_report=yes" >> $GITHUB_OUTPUT
+            echo "coverage_report=no" >> $GITHUB_OUTPUT
           fi
         env:
           # just some value in order to make unit test pass
