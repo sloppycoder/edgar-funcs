@@ -1,6 +1,6 @@
 [project]
 name = "edgar-funcs"
-version = "0.9.0"
+version = "0.9.1"
 description = "funtions for processing SEC filings on EDGAR site"
 authors = [{ name = "Li Lin", email = "guru.lin@gmail.com" }]
 readme = "README.md"

@@ -10,35 +10,15 @@ repos:
       # - id: debug-statements
       #   args: ["--print-changes"]
 
-  - repo: local
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.7.5
     hooks:
-      - id: update-uv-lock
-        name: ensure uv.lock is up-to-date
-        entry: bash -c 'uv lock && git diff --exit-code uv.lock > /dev/null'
-        language: system
-        files: ^uv\.lock$
-        pass_filenames: false
-
-      - id: update-requirements-txt
-        name: ensure requirements.txt is up-to-date
-        entry: bash -c 'uv pip compile pyproject.toml -o requirements.txt > /dev/null && git diff --exit-code requirements.txt > /dev/null'
-        language: system
-        files: ^pyproject\.toml$
-        pass_filenames: false
-
-      - id: update-requirements-dev-txt
-        name: ensure requirements-dev.txt is up-to-date
-        entry: bash -c 'uv pip compile pyproject.toml --group dev -o requirements-dev.txt > /dev/null && git diff --exit-code requirements-dev.txt > /dev/null'
-        language: system
-        files: ^pyproject\.toml$
-        pass_filenames: false
-
-      - id: pyright
-        name: pyright
-        entry: bash -c 'uv run pyright'
-        language: system
-        types: [python]
-        pass_filenames: false
+      - id: uv-lock
+      - id: uv-export
+      - id: uv-export
+        args:
+          ["--frozen", "--group", "dev", "--output-file=requirements-dev.txt"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.6
@@ -47,3 +27,12 @@ repos:
         args: [--fix]
 
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: bash -c 'uv run pyright'
+        language: system
+        types: [python]
+        pass_filenames: false
