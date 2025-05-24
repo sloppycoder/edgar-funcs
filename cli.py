@@ -245,7 +245,7 @@ def main():
     )
 
     if args.mode == "list":
-        df_todo = pd.read_csv(args.arg1)
+        df_todo = pd.read_csv(args.arg1, comment="#")
     elif args.mode == "sample":
         # sample a percentage of companies
         # and process filing for those companies within the period
