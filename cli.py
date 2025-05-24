@@ -92,8 +92,7 @@ def print_stats(batch_id: str):
     table_name = os.environ.get("RESULT_TABLE", "edgar-ai.edgar.extraction_result")
     query = f"""
         SELECT
-            batch_id, cik, company_name, accession_number,
-            extraction_type, selected_chunks
+            batch_id, cik, accession_number, extraction_type, selected_chunks
         FROM `{table_name}`
         WHERE batch_id = '{batch_id}'
         LIMIT 5000
