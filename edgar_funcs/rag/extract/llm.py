@@ -12,7 +12,13 @@ from google.api_core.exceptions import (
 )
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    RetryError,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 from vertexai.generative_models import GenerativeModel
 
 from ..helper import init_vertaxai, openai_client
@@ -23,15 +29,20 @@ logger = logging.getLogger(__name__)
 def ask_model(
     model: str, prompt: str, responseModelClass: Type[BaseModel]
 ) -> Optional[str]:
-    if model.startswith("gemini"):
-        google_schema = _convert_json_schema_to_google_schema(
-            responseModelClass.model_json_schema()
+    try:
+        if model.startswith("gemini"):
+            google_schema = _convert_json_schema_to_google_schema(
+                responseModelClass.model_json_schema()
+            )
+            return _chat_with_gemini(model, prompt, google_schema)
+        elif model.startswith("gpt"):
+            return _chat_with_gpt(model, prompt, responseModelClass)
+        else:
+            raise ValueError(f"Unknown model: {model}")
+    except RetryError as e:
+        logger.warning(
+            f"Failed to get response from {model} after retries: {e.last_attempt.exception()}"  # noqa: E501
         )
-        return _chat_with_gemini(model, prompt, google_schema)
-    elif model.startswith("gpt"):
-        return _chat_with_gpt(model, prompt, responseModelClass)
-    else:
-        raise ValueError(f"Unknown model: {model}")
 
 
 @retry(
