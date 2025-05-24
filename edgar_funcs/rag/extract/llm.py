@@ -35,7 +35,7 @@ def ask_model(
 
 
 @retry(
-    stop=stop_after_attempt(6),
+    stop=stop_after_attempt(7),
     wait=wait_exponential(multiplier=1, min=4, max=120),
     retry=retry_if_exception_type(
         (
@@ -74,7 +74,7 @@ def _chat_with_gpt(
 
 
 @retry(
-    stop=stop_after_attempt(6),
+    stop=stop_after_attempt(7),
     wait=wait_exponential(multiplier=1, min=4, max=120),
     retry=retry_if_exception_type(
         (
