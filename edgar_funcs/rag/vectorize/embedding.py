@@ -128,8 +128,8 @@ class RetriableServerError(Exception):
 
 
 @retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=1, max=30),
+    stop=stop_after_attempt(7),
+    wait=wait_exponential(multiplier=1, min=1, max=120),
     retry=retry_if_exception_type(RetriableServerError),
 )
 def _call_openai_embedding_api(input_: list[str], model: str) -> list[list[float]]:
@@ -147,8 +147,8 @@ def _call_openai_embedding_api(input_: list[str], model: str) -> list[list[float
 
 
 @retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=1, max=30),
+    stop=stop_after_attempt(7),
+    wait=wait_exponential(multiplier=1, min=1, max=120),
     retry=retry_if_exception_type(RetriableServerError),
 )
 def _call_gemini_embedding_api(
