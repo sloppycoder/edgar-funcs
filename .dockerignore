@@ -4,6 +4,7 @@
 
 # White-list what we need
 
-!requirements*.txt
+!requirements.txt
 !*.py
 !edgar_funcs
+!pyproject.toml
