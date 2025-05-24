@@ -180,19 +180,20 @@ def _extract_fundmgr_ownership(
             f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
         )
         if response:
+            result: FundManagerOwnership = {
+                "cik": chunks.metadata.get("cik", ""),
+                "accession_number": chunks.metadata.get("accession_number", ""),
+                "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
+                "selected_chunks": relevant_chunks,
+                "selected_text": relevant_text,
+                "response": response,
+                "ownership_info": {},
+            }
             try:
                 ownership_info = json.loads(response)
                 if "managers" in ownership_info and len(ownership_info["managers"]) > 0:
-                    result: FundManagerOwnership = {
-                        "cik": chunks.metadata.get("cik", ""),
-                        "accession_number": chunks.metadata.get("accession_number", ""),
-                        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
-                        "selected_chunks": relevant_chunks,
-                        "selected_text": relevant_text,
-                        "response": response,
-                        "ownership_info": ownership_info,
-                    }
-                    return result
+                    result["ownership_info"] = ownership_info
+                return result
 
             except json.JSONDecodeError:
                 pass
