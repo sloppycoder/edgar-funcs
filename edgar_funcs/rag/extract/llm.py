@@ -8,6 +8,7 @@ from google.api_core.exceptions import (
     InternalServerError,
     ResourceExhausted,
     ServiceUnavailable,
+    TooManyRequests,
 )
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 from pydantic import BaseModel
@@ -79,6 +80,7 @@ def _chat_with_gpt(
         (
             DeadlineExceeded,  # timeout
             ServiceUnavailable,  # transient unavailability
+            TooManyRequests,  # rate limit exceeded
             ResourceExhausted,  # quota or rate limit exceeded
             InternalServerError,  # 500-level errors
         )
