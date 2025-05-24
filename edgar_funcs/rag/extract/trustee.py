@@ -176,23 +176,21 @@ def _extract_trustee_comp(
             f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
         )
         if response:
-            result: TrusteeComp = {
-                "cik": chunks.metadata.get("cik", ""),
-                "accession_number": chunks.metadata.get("accession_number", ""),
-                "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
-                "selected_chunks": relevant_chunks,
-                "selected_text": relevant_text,
-                "n_trustee": 0,
-                "response": response,
-                "comp_info": {},
-            }
             try:
                 comp_info = json.loads(response)
                 n_trustee = len(comp_info["trustees"])
                 if n_trustee > 1:
-                    result["n_trustee"] = n_trustee
-                    result["comp_info"] = comp_info
-                return result
+                    result: TrusteeComp = {
+                        "cik": chunks.metadata.get("cik", ""),
+                        "accession_number": chunks.metadata.get("accession_number", ""),
+                        "date_filed": chunks.metadata.get("date_filed", "1971-01-01"),
+                        "selected_chunks": relevant_chunks,
+                        "selected_text": relevant_text,
+                        "n_trustee": n_trustee,
+                        "response": response,
+                        "comp_info": comp_info,
+                    }
+                    return result
 
             except json.JSONDecodeError:
                 pass
