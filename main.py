@@ -65,7 +65,7 @@ def req_processor():
         error_msg = str(e)
         tb = traceback.format_exc()
         data = request.get_json()
-        logger.error(f"chunking with {data} failed with {error_msg}\n{tb}")
+        logger.error(f"processing with {data} failed with {error_msg}\n{tb}")
         # must return 200 in order to indicate the message
         # has been processed
         return jsonify({"error": error_msg}), 200
@@ -93,40 +93,45 @@ def _retrieve_chunks_for_filing(
         )
         return existing_chunks
     except ValueError:
-        metadata = {
-            "cik": cik,
-            "accession_number": accession_number,
-            "chunk_algo_version": chunk_algo_version,
-            "model": embedding_model,
-            "dimension": embedding_dimension,
-        }
+        # saved chunks not found
+        pass
 
-        lock_blob_path = _blob_path(**metadata).replace(".pickle", "_lock.json")
-        if not write_lock(lock_blob_path):
-            return None
+    metadata = {
+        "cik": cik,
+        "accession_number": accession_number,
+        "chunk_algo_version": chunk_algo_version,
+        "model": embedding_model,
+        "dimension": embedding_dimension,
+    }
 
-        start_t = datetime.now()
-        filing = SECFiling(cik=cik, accession_number=accession_number)
-        metadata["date_filed"] = filing.date_filed
-        text_chunks = chunk_filing(filing)
-        new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
-        new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
-        new_chunks.save()
-        elapsed_t = datetime.now() - start_t
-        logger.info(
-            f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
-        )
-        delete_lock(lock_blob_path)
-        return new_chunks
+    lock_blob_path = _blob_path(**metadata).replace(".pickle", "_lock.json")
+    if not write_lock(lock_blob_path):
+        return None
+
+    start_t = datetime.now()
+    filing = SECFiling(cik=cik, accession_number=accession_number)
+    metadata["date_filed"] = filing.date_filed
+    text_chunks = chunk_filing(filing)
+    new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
+    new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
+    new_chunks.save()
+    elapsed_t = datetime.now() - start_t
+    logger.info(
+        f"created new {len(new_chunks.texts)} chunks for {cik}/{accession_number} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
+    )
+    delete_lock(lock_blob_path)
+    return new_chunks
 
 
 def _perform_extraction(data: dict) -> dict[str, Any]:
     action = data.get("action")
+    cik = data.get("cik", "0")
+    accession_number = data.get("accession_number", "0000000000-00-000000")
     extraction_result = {
         "batch_id": data.get("batch_id", ""),
-        "cik": data.get("cik", "0"),
+        "cik": cik,
         "company_name": data.get("company_name", "test company"),
-        "accession_number": data.get("accession_number", "0000000000-00-000000"),
+        "accession_number": accession_number,
         "date_filed": data.get("date_filed", "1971-01-01"),
         "model": data["model"],
         "extraction_type": action,
@@ -155,9 +160,17 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
             extraction_result["response"] = result["response"]
 
     else:
+        # action is "chunk", just load the chunks to verify it exists
+        chunks = TextChunksWithEmbedding.load(
+            cik=cik,
+            accession_number=accession_number,
+            model=data.get("embedding_model", "_dummy_"),
+            dimension=data.get("embedding_dimension", "0"),
+            chunk_algo_version=data.get("chunk_algo_version", "0"),
+        )
         extraction_result["selected_chunks"] = []
         extraction_result["selected_text"] = ""
-        extraction_result["response"] = ""
+        extraction_result["response"] = "" if chunks else "no chunks found"
 
     return extraction_result
 
