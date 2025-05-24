@@ -106,11 +106,11 @@ def _chat_with_gemini(model_name: str, prompt: str, output_schema) -> Optional[s
         DeadlineExceeded,  # timeout
         ServiceUnavailable,  # transient unavailability
         ResourceExhausted,  # quota or rate limit exceeded
+        TooManyRequests,  # rate limit exceeded
         InternalServerError,  # 500-level errors
     ) as e:
         logging.info(f"retrying Gemini API call due to {type(e)}")
         raise
-
     except Exception as e:
         logging.warning(f"Error calling Gemini API: {type(e)},{str(e)}")
         return None
