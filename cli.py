@@ -90,7 +90,14 @@ def print_stats(batch_id: str):
 
     client = bigquery.Client()
     table_name = os.environ.get("RESULT_TABLE", "edgar-ai.edgar.extraction_result")
-    query = f"SELECT * FROM `{table_name}` WHERE batch_id = '{batch_id}' LIMIT 5000"
+    query = f"""
+        SELECT
+            batch_id, cik, company_name, accession_number,
+            extraction_type, selected_chunks
+        FROM `{table_name}`
+        WHERE batch_id = '{batch_id}'
+        LIMIT 5000
+    """
     for result in client.query(query):
         total_docs += 1
         extraction_type = result.get("extraction_type")
