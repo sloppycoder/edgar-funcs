@@ -15,17 +15,14 @@ repos:
     rev: 0.7.5
     hooks:
       - id: uv-lock
-      - id: uv-export
-        args: ["--frozen", "--no-hashes"]
-      - id: uv-export
-        args:
-          [
-            "--frozen",
-            "--group",
-            "dev",
-            "--no-hashes",
-            "--output-file=requirements-dev.txt",
-          ]
+      - id: pip-compile
+        name: requirements.txt
+        args: [pyproject.toml, -o, requirements.txt]
+        files: ^(pyproject\.toml|uv\.lock)$
+      - id: pip-compile
+        name: requirements-dev.txt
+        args: [pyproject.toml, --group, dev, -o, requirements-dev.txt]
+        files: ^(pyproject\.toml|uv\.lock)$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.6
