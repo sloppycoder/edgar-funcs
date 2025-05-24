@@ -144,7 +144,11 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
     if action == "trustee":
         result = extract_trustee_comp_from_filing(**data)
         if result:
-            logger.info(f"extraction with {data} found {result['n_trustee']} trustees")
+            try:
+                n_trustee = result["n_trustee"]
+            except KeyError:
+                n_trustee = 0
+            logger.info(f"extraction with {data} found {n_trustee} trustees")
             extraction_result["selected_chunks"] = result["selected_chunks"]
             extraction_result["selected_text"] = result["selected_text"]
             extraction_result["response"] = result["response"]
@@ -152,9 +156,11 @@ def _perform_extraction(data: dict) -> dict[str, Any]:
     elif action == "fundmgr":
         result = extract_fundmgr_ownership_from_filing(**data)
         if result:
-            logger.info(
-                f"extraction with {data} found {len(result['ownership_info']['managers'])} managers"  # noqa E501
-            )
+            try:
+                n_manager = len(result["ownership_info"]["managers"])
+            except KeyError:
+                n_manager = 0
+            logger.info(f"extraction with {data} found {n_manager} managers")
             extraction_result["selected_chunks"] = result["selected_chunks"]
             extraction_result["selected_text"] = result["selected_text"]
             extraction_result["response"] = result["response"]
