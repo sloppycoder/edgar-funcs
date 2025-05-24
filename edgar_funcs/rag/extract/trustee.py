@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import datetime
 from typing import Any, Optional, Type, TypedDict
 
 from pydantic import BaseModel
@@ -168,13 +167,8 @@ def _extract_trustee_comp(
             continue
 
         # step 4: send the relevant text to the LLM model with designed prompt
-        start_t = datetime.now()
         prompt = TRUSTEE_COMP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
         response = ask_model(model, prompt, responseModelClass)
-        elapsed_t = datetime.now() - start_t
-        logger.debug(
-            f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
-        )
         if response:
             try:
                 comp_info = json.loads(response)

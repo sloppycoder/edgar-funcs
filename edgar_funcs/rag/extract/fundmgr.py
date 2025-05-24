@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import datetime
 from typing import Any, Optional, TypedDict
 
 from pydantic import BaseModel
@@ -172,13 +171,8 @@ def _extract_fundmgr_ownership(
         if not relevant_text or len(relevant_text) < 100:
             continue
 
-        start_t = datetime.now()
         prompt = FUND_MGR_OWNERSHIP_PROMPT.replace("{SEC_FILING_SNIPPET}", relevant_text)
         response = ask_model(model, prompt, responseModelClass=ManagerOwnershipResponse)
-        elapsed_t = datetime.now() - start_t
-        logger.debug(
-            f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
-        )
         if response:
             try:
                 ownership_info = json.loads(response)

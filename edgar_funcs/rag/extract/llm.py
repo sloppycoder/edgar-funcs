@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import Optional, Type
 
 import jsonref
@@ -29,20 +30,29 @@ logger = logging.getLogger(__name__)
 def ask_model(
     model: str, prompt: str, responseModelClass: Type[BaseModel]
 ) -> Optional[str]:
+    if not model.startswith("gpt") and not model.startswith("gemini"):
+        raise ValueError(f"Unknown model: {model}")
+
     try:
+        start_t = datetime.now()
         if model.startswith("gemini"):
             google_schema = _convert_json_schema_to_google_schema(
                 responseModelClass.model_json_schema()
             )
-            return _chat_with_gemini(model, prompt, google_schema)
-        elif model.startswith("gpt"):
-            return _chat_with_gpt(model, prompt, responseModelClass)
+            response = _chat_with_gemini(model, prompt, google_schema)
         else:
-            raise ValueError(f"Unknown model: {model}")
+            response = _chat_with_gpt(model, prompt, responseModelClass)
+        elapsed_t = datetime.now() - start_t
+        logger.debug(
+            f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
+        )
+        return response
+
     except RetryError as e:
         logger.warning(
             f"Failed to get response from {model} after retries: {e.last_attempt.exception()}"  # noqa: E501
         )
+        return None
 
 
 @retry(
