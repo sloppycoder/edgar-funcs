@@ -74,11 +74,7 @@ class TextChunksWithEmbedding:
         self.metadata["dimension"] = dimension
 
     def get_text_chunks(self, chunks: list[int]) -> str:
-        result = ""
-        for i in chunks:
-            result += f" --- chunk {i} --- \n"
-            result += self.texts[i] + "\n"
-        return result
+        return "\n\n".join([self.texts[i] for i in chunks])
 
     def save(self, storage_base_path=os.environ.get("STORAGE_PREFIX", "")) -> None:
         if self.is_ready():
