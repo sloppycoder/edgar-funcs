@@ -69,11 +69,24 @@ def _request_payload(
     }
 
 
+def _query_result_table(batch_id: str):
+    client = bigquery.Client()
+    table_name = os.environ.get("RESULT_TABLE", "edgar-ai.edgar.extraction_result")
+    query = f"""
+        SELECT
+            batch_id, cik, company_name, accession_number, date_filed,
+            extraction_type, selected_chunks, response
+        FROM `{table_name}`
+        WHERE batch_id = '{batch_id}'
+        LIMIT 5000
+    """
+    return client.query(query)
+
+
 def print_stats(batch_id: str):
     """
     Count the number of records in a Firestore collection filtered by batch_id.
     """
-
     match = re.search(r"\d{14}-[a-z]{3}", batch_id.strip())
     if match:
         batch_id = match.group(0)
@@ -88,16 +101,7 @@ def print_stats(batch_id: str):
     n_empty = 0
     extraction_type = ""
 
-    client = bigquery.Client()
-    table_name = os.environ.get("RESULT_TABLE", "edgar-ai.edgar.extraction_result")
-    query = f"""
-        SELECT
-            batch_id, cik, accession_number, extraction_type, selected_chunks
-        FROM `{table_name}`
-        WHERE batch_id = '{batch_id}'
-        LIMIT 5000
-    """
-    for result in client.query(query):
+    for result in _query_result_table(batch_id):
         total_docs += 1
         extraction_type = result.get("extraction_type")
         accession_number = result.get("accession_number")
@@ -124,6 +128,60 @@ def print_stats(batch_id: str):
         + f"total/uniq/empty: {total_docs}/{n_docs}/{n_empty}, "
         + f"cik ratio:{cik_ratio:.2f}, doc ratio:{doc_ratio:.2f}, "
     )
+
+
+def export_result(batch_id: str):
+    match = re.search(r"\d{14}-[a-z]{3}", batch_id.strip())
+    if match:
+        batch_id = match.group(0)
+    else:
+        print(f"Invalid batch_id format: {batch_id}")
+        return
+
+    fieldnames = [
+        "batch_id",
+        "cik",
+        "company_name",
+        "accession_number",
+        "date_filed",
+        "manager",
+        "fund",
+        "ownership_range",
+    ]
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+
+    for row in _query_result_table(batch_id):
+        output_row = {
+            "batch_id": row.get("batch_id"),
+            "cik": row.get("cik"),
+            "company_name": row.get("company_name"),
+            "accession_number": row.get("accession_number"),
+            "date_filed": row.get("date_filed"),
+        }
+        try:
+            ownership_info = json.loads(row.get("response"))
+            if "managers" in ownership_info:
+                for info in ownership_info["managers"]:
+                    range_ = info.get("ownership_range", "")
+                    range_ = (
+                        range_.replace(" ", "")
+                        .replace("–", "")
+                        .replace("$", "")
+                        .replace(",", "")
+                        .lower()
+                    )
+
+                    output_row.update(
+                        {
+                            "manager": info.get("name", ""),
+                            "fund": info.get("fund", ""),
+                            "ownership_range": range_,
+                        }
+                    )
+                    writer.writerow(output_row)
+        except json.JSONDecodeError:
+            pass
 
 
 def batch_request(todo_list: list[dict[Hashable, Any]], topic: str, payload_func):
@@ -172,13 +230,14 @@ def parse_cli():
             "trustee",
             "fundmgr",
             "stats",
+            "export",
         ],
         help="Command to execute: chunk, trustee or fundmgr",
     )
     parser.add_argument(
         "arg1",
         type=str,
-        help="Accession Number to process or percentage of filings to sample",
+        help="depends on command, can be accession number to process or percentage of filings to sample, output file etc.",  # noqa E501
     )
     parser.add_argument(
         "--start",
@@ -225,7 +284,7 @@ def parse_cli():
     elif args.arg1.endswith(".csv"):
         args.mode = "list"
     else:
-        if args.command == "stats":
+        if args.command in ["stats", "export"]:
             args.mode = "stats"
         else:
             parser.error(f"Invalid accession number {args.arg1}")
@@ -238,6 +297,10 @@ def main():
 
     if args.command == "stats":
         print_stats(args.arg1)
+        return
+
+    if args.command == "export":
+        export_result(args.arg1)
         return
 
     # _request_payload is shared between batch_request and single request

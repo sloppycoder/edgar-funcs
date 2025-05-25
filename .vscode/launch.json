@@ -30,7 +30,10 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": []
+            "args": [
+                "export",
+                "20250524191442-cff"
+            ]
         },
         {
             "name": "pytest",
