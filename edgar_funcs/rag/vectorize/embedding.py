@@ -8,16 +8,6 @@ from ..helper import init_vertaxai
 
 logger = logging.getLogger(__name__)
 
-_OPENAI_EMBEDDING_MODELS = [
-    "text-embedding-3-small",
-    "text-embedding-3-large",
-    "text-embedding-ada-002",
-]
-_GEMINI_EMBEDDING_MODELS = [
-    "vertex_ai/text-embedding-005",
-    "vertex_ai/textembedding-gecko@002",
-]
-
 
 def batch_embedding(
     chunks: list[str],
@@ -35,12 +25,10 @@ def batch_embedding(
     Returns:
         list[list[float]]: A list of embeddings (one embedding per chunk)
     """
-    if model in _OPENAI_EMBEDDING_MODELS:
-        max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
-    elif model in _GEMINI_EMBEDDING_MODELS:
+    if model.startswith("vertexai/"):
         max_tokens_per_request, max_chunks_per_request = 10000, 200
     else:
-        raise ValueError(f"Unsupported embedding model {model}")
+        max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
 
     # tiktoken does not support Gemini model
     # use OpenAI as stand-in.
@@ -125,11 +113,9 @@ def _call_litellm_embedding_api(
     content: list[str], model: str, task_type: str, dimensionality: int
 ) -> list[list[float]]:
     try:
-        if model in _GEMINI_EMBEDDING_MODELS:
-            init_vertaxai()
-
         kwargs = {}
-        if model in _GEMINI_EMBEDDING_MODELS:
+        if model.startswith("vertexai/"):
+            init_vertaxai()
             kwargs["task_type"] = task_type
             kwargs["dimensions"] = dimensionality
 
