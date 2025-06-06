@@ -1,13 +1,10 @@
 import logging
 
-import httpx
-import openai
 import tiktoken
-from google.api_core.exceptions import GoogleAPICallError, ServerError
+from litellm import embedding
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
-from ..helper import init_vertaxai, openai_client
+from ..helper import init_vertaxai
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +14,8 @@ _OPENAI_EMBEDDING_MODELS = [
     "text-embedding-ada-002",
 ]
 _GEMINI_EMBEDDING_MODELS = [
-    "text-embedding-005",
-    "textembedding-gecko@002",
+    "vertex_ai/text-embedding-005",
+    "vertex_ai/textembedding-gecko@002",
 ]
 
 
@@ -102,20 +99,12 @@ def _call_embedding_api(
     task_type: str,
     dimension: int,
 ) -> list[list[float]]:
-    if model in _OPENAI_EMBEDDING_MODELS:
-        return _call_openai_embedding_api(
-            content,
-            model=model,
-        )
-    elif model in _GEMINI_EMBEDDING_MODELS:
-        return _call_gemini_embedding_api(
-            content,
-            model=model,
-            task_type=task_type,
-            dimensionality=dimension,
-        )
-    else:
-        raise ValueError(f"Unsupported embedding model {model}")
+    return _call_litellm_embedding_api(
+        content,
+        model=model,
+        task_type=task_type,
+        dimensionality=dimension,
+    )
 
 
 class RetriableServerError(Exception):
@@ -132,40 +121,24 @@ class RetriableServerError(Exception):
     wait=wait_exponential(multiplier=1, min=1, max=120),
     retry=retry_if_exception_type(RetriableServerError),
 )
-def _call_openai_embedding_api(input_: list[str], model: str) -> list[list[float]]:
-    try:
-        client = openai_client()
-        response = client.embeddings.create(input=input_, model=model)
-        return [item.embedding for item in response.data]
-    except openai.RateLimitError as e:
-        raise RetriableServerError(e)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code >= 500:
-            raise RetriableServerError(e)
-        else:
-            raise
-
-
-@retry(
-    stop=stop_after_attempt(7),
-    wait=wait_exponential(multiplier=1, min=1, max=120),
-    retry=retry_if_exception_type(RetriableServerError),
-)
-def _call_gemini_embedding_api(
+def _call_litellm_embedding_api(
     content: list[str], model: str, task_type: str, dimensionality: int
 ) -> list[list[float]]:
     try:
-        init_vertaxai()
-        embedding_model = TextEmbeddingModel.from_pretrained(model)
-        inputs = [TextEmbeddingInput(text, task_type=task_type) for text in content]
-        embeddings = embedding_model.get_embeddings(
-            texts=inputs,  # pyright: ignore
-            auto_truncate=True,
-            output_dimensionality=dimensionality,
-        )
-        return [e.values for e in embeddings]
-    except GoogleAPICallError as e:
-        if isinstance(e, ServerError):
+        if model in _GEMINI_EMBEDDING_MODELS:
+            init_vertaxai()
+
+        kwargs = {}
+        if model in _GEMINI_EMBEDDING_MODELS:
+            kwargs["task_type"] = task_type
+            kwargs["dimensions"] = dimensionality
+
+        response = embedding(model=model, input=content, **kwargs)
+        return [item["embedding"] for item in response.data]
+    except Exception as e:
+        if hasattr(e, "status_code") and getattr(e, "status_code", 0) >= 500:
+            raise RetriableServerError(e)
+        elif "rate limit" in str(e).lower() or "quota" in str(e).lower():
             raise RetriableServerError(e)
         else:
             raise

@@ -90,7 +90,7 @@ def _save_chunks_mockdata(filing: SECFiling, text_chunks: list[str]):
         "accession_number": filing.accession_number,
         "date_filed": filing.date_filed,
     }
-    embedding_model, embedding_dimension = "text-embedding-005", 768
+    embedding_model, embedding_dimension = "vertex_ai/text-embedding-005", 768
     new_chunks = TextChunksWithEmbedding(text_chunks, metadata=metadata)
     new_chunks.get_embeddings(model=embedding_model, dimension=embedding_dimension)
     new_chunks.save()

@@ -8,7 +8,7 @@ from tests.utils import mock_file_content
 
 extract_func = partial(
     extract_trustee_comp_from_filing,
-    embedding_model="text-embedding-005",
+    embedding_model="vertex_ai/text-embedding-005",
     embedding_dimension=768,
     chunk_algo_version="3",
 )
