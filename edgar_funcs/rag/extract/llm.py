@@ -5,6 +5,13 @@ from typing import Optional, Type
 
 import jsonref
 import litellm
+from litellm import (
+    APIConnectionError,
+    APIError,
+    RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
+)
 from pydantic import BaseModel
 from tenacity import (
     RetryError,
@@ -41,7 +48,15 @@ def ask_model(
 @retry(
     stop=stop_after_attempt(7),
     wait=wait_exponential(multiplier=1, min=4, max=120),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_exception_type(
+        (
+            RateLimitError,
+            APIConnectionError,
+            Timeout,
+            ServiceUnavailableError,
+            APIError,
+        )
+    ),
 )
 def _chat_with_litellm(
     model_name: str,
@@ -84,9 +99,18 @@ def _chat_with_litellm(
                 logger.warning(f"Response validation failed: {e}")
                 return content
 
-    except Exception as e:
+    except (
+        RateLimitError,
+        APIConnectionError,
+        Timeout,
+        ServiceUnavailableError,
+        APIError,
+    ) as e:
         logger.info(f"retrying {model_name} API call due to {type(e)}: {str(e)}")
         raise
+    except Exception as e:
+        logger.warning(f"Non-retryable error calling {model_name}: {type(e)}: {str(e)}")
+        return None
 
     return None
 
