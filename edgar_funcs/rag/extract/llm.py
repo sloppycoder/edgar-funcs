@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 import jsonref
 import litellm
-from litellm import (
+from litellm.exceptions import (
     APIConnectionError,
     APIError,
     RateLimitError,
