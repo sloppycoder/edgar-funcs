@@ -15,7 +15,7 @@ from func_helpers import _get_lock_blob, delete_lock, write_lock
 embedding_model, embedding_dimension, extraction_model = (
     "text-embedding-3-small",
     1536,
-    "gemini-2.0-flash",
+    "vertex_ai/gemini-2.0-flash-001",
 )
 
 

@@ -14,11 +14,14 @@ extract_func = partial(
 )
 
 
-@pytest.mark.parametrize("extraction_model", ["gpt-4o-mini", "gemini-2.0-flash"])
+@pytest.mark.parametrize(
+    "extraction_model", ["gpt-4o-mini", "vertex_ai/gemini-2.0-flash-001"]
+)
 @patch("edgar_funcs.rag.extract.fundmgr.ask_model")
 def test_extract_fundmgr_ownership(mock_ask_model, extraction_model):
+    model_path = extraction_model.replace("/", "_")
     mock_ask_model.return_value = mock_file_content(
-        f"response/{extraction_model}/1002427/0001133228-24-004879_fundmgr_ownership.txt"
+        f"response/{model_path}/1002427/0001133228-24-004879_fundmgr_ownership.txt"
     )
     result = extract_func(
         cik="1002427",

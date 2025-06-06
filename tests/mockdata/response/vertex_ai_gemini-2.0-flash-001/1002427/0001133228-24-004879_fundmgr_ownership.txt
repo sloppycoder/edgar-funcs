@@ -1,0 +1,36 @@
+{
+  "managers": [
+    {
+      "fund": "N/A",
+      "name": "Dennis P. Lynch",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "fund": "N/A",
+      "name": "Sam G. Chainani",
+      "ownership_range": "50,001 - 100,000"
+    },
+    {
+      "fund": "N/A",
+      "name": "Jason C. Yeung",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "fund": "N/A",
+      "name": "Armistead B. Nash",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "fund": "N/A",
+      "name": "David S. Cohen",
+      "ownership_range": "10,001 - 50,000"
+    },
+    {
+      "fund": "N/A",
+      "name": "Alexander T. Norton",
+      "ownership_range": "50,001 - 100,000"
+    }
+  ],
+  "notes": "The dollar range of securities beneficially owned by each portfolio manager in the Fund is shown as of December 31, 2023.",
+  "ownership_info_present": true
+}

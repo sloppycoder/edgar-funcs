@@ -38,7 +38,7 @@ def test_req_processor_success(
         "accession_number": "0",
         "embedding_model": "text-embedding-3-small",
         "embedding_dimension": 1536,
-        "model": "gemini-2.0-flash",
+        "model": "vertex_ai/gemini-2.0-flash-001",
         "chunk_algo_version": "4",
     }
 

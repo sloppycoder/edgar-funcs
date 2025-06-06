@@ -14,11 +14,14 @@ extract_func = partial(
 )
 
 
-@pytest.mark.parametrize("extraction_model", ["gemini-2.0-flash", "gpt-4o-mini"])
+@pytest.mark.parametrize(
+    "extraction_model", ["vertex_ai/gemini-2.0-flash-001", "gpt-4o-mini"]
+)
 @patch("edgar_funcs.rag.extract.trustee.ask_model")
 def test_extract_html_filing(mock_ask_model, extraction_model):
+    model_path = extraction_model.replace("/", "_")
     mock_ask_model.return_value = mock_file_content(
-        f"response/{extraction_model}/1002427/0001133228-24-004879_trustee_comp.txt"
+        f"response/{model_path}/1002427/0001133228-24-004879_trustee_comp.txt"
     )
     result = extract_func(
         cik="1002427",
@@ -33,11 +36,14 @@ def test_extract_html_filing(mock_ask_model, extraction_model):
     )
 
 
-@pytest.mark.parametrize("extraction_model", ["gpt-4o-mini", "gemini-2.0-flash"])
+@pytest.mark.parametrize(
+    "extraction_model", ["gpt-4o-mini", "vertex_ai/gemini-2.0-flash-001"]
+)
 @patch("edgar_funcs.rag.extract.trustee.ask_model")
 def test_extract_txt_filing(mock_ask_model, extraction_model):
+    model_path = extraction_model.replace("/", "_")
     mock_ask_model.return_value = mock_file_content(
-        f"response/{extraction_model}/1201932/0000950136-04-001365_trustee_comp.txt"
+        f"response/{model_path}/1201932/0000950136-04-001365_trustee_comp.txt"
     )
     result = extract_func(
         cik="1201932",
