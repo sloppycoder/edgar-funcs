@@ -43,7 +43,7 @@ Follow these steps to analyze the snippet:
 3. If you find such information, extract the relevant details for each Trustee.
 4. Pay attention to any footnotes or additional explanations related to the compensation.
 
-Structure your output as follows:
+Structure your output as JSON with the following format:
 1. A boolean field indicating whether compensation information is present in the snippet.
 2. A list of Trustees with their compensation details.
 3. A notes field for any additional information or explanations.
@@ -55,6 +55,8 @@ If the compensation information is not present in the snippet:
 
 If you find any additional relevant information or need to provide explanations about your analysis,
 include them in the notes field.
+
+Return your response as a valid JSON object.
 
 Remove the leading $ sign and comma from compensation Amount.
 """  # noqa: E501

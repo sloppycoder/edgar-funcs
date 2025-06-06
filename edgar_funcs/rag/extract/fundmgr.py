@@ -58,13 +58,15 @@ Follow these steps to analyze the snippet:
 3. If such information is found you find such information, extract the portoflio manager's name, fund name (if specified) and the manager's owenrship amount in dollar range as required by SEC. e.g. $1-$10,000, $10,001-$500,000, $500,001-$1,000,000 and over $1,000,000
 4. Pay attention to any footnotes or additional explanations related ownership information, e.g. the year of disclore.
 
-Structure your output as follows:
+Structure your output as JSON with the following format:
 1. A list of managerss with their ownership details.
 2. A notes field for any additional information or explanations.
 
 If the compensation information is not present in the snippet:
 1. Leave the list of managers empty.
 2. In the notes field, explain that the ownership information was not found in the given snippet.
+
+Return your response as a valid JSON object.
 
 Please remove the leading $ sign from dollar range extracted
 
