@@ -2,6 +2,11 @@ import logging
 
 import tiktoken
 from litellm import embedding
+from litellm.exceptions import (
+    APIConnectionError,
+    InternalServerError,
+    RateLimitError,
+)
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..helper import init_vertaxai
@@ -95,19 +100,12 @@ def _call_embedding_api(
     )
 
 
-class RetriableServerError(Exception):
-    """
-    Indicate server side error when calling an API
-    This can be used to trigger a retry.
-    """
-
-    pass
-
-
 @retry(
     stop=stop_after_attempt(7),
     wait=wait_exponential(multiplier=1, min=1, max=120),
-    retry=retry_if_exception_type(RetriableServerError),
+    retry=retry_if_exception_type(
+        (RateLimitError, APIConnectionError, InternalServerError)
+    ),
 )
 def _call_litellm_embedding_api(
     content: list[str], model: str, task_type: str, dimensionality: int
@@ -121,13 +119,14 @@ def _call_litellm_embedding_api(
 
         response = embedding(model=model, input=content, **kwargs)
         return [item["embedding"] for item in response.data]
+    except (RateLimitError, APIConnectionError, InternalServerError) as e:
+        logger.info(f"retrying {model} embedding API call due to {type(e)}: {str(e)}")
+        raise
     except Exception as e:
-        if hasattr(e, "status_code") and getattr(e, "status_code", 0) >= 500:
-            raise RetriableServerError(e)
-        elif "rate limit" in str(e).lower() or "quota" in str(e).lower():
-            raise RetriableServerError(e)
-        else:
-            raise
+        logger.warning(
+            f"Non-retryable error calling {model} embedding API: {type(e)}: {str(e)}"
+        )
+        raise
 
 
 def _truncate_chunk(chunk: str, encoding, max_tokens: int) -> str:
