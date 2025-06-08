@@ -21,8 +21,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from ..helper import init_vertaxai
-
 logger = logging.getLogger(__name__)
 
 
@@ -64,10 +62,6 @@ def _chat_with_litellm(
     responseModelClass: Type[BaseModel],
 ) -> Optional[str]:
     try:
-        # Set up vertex AI for Gemini models
-        if model_name.startswith("vertex_ai/"):
-            init_vertaxai()
-
         # Prepare response format based on model type
         if model_name.startswith("vertex_ai/gemini"):
             # For Gemini models, use response_schema format

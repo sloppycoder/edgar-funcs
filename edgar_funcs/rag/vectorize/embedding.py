@@ -9,8 +9,6 @@ from litellm.exceptions import (
 )
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from ..helper import init_vertaxai
-
 logger = logging.getLogger(__name__)
 
 
@@ -113,7 +111,6 @@ def _call_litellm_embedding_api(
     try:
         kwargs = {}
         if model.startswith("vertexai/"):
-            init_vertaxai()
             kwargs["task_type"] = task_type
             kwargs["dimensions"] = dimensionality
 

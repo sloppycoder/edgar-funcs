@@ -9,7 +9,8 @@
       "Bash(python -m pytest tests/test_extract_trustee.py::test_extract_html_filing tests/test_extract_fundmgr.py::test_extract_fundmgr_ownership -v)",
       "Bash(python:*)",
       "WebFetch(domain:docs.litellm.ai)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
