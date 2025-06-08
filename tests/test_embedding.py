@@ -10,7 +10,7 @@ from edgar_funcs.rag.vectorize import (
 from edgar_funcs.rag.vectorize.chunking import CHUNK_ALORITHM_VERSION
 from tests.utils import mock_file_content, mock_json_dict
 
-embedding_model, embedding_dimension = "text-embedding-005", 768
+embedding_model, embedding_dimension = "vertex_ai/text-embedding-005", 768
 
 
 @patch("edgar_funcs.edgar.edgar_file")
@@ -22,7 +22,7 @@ def test_one_filing_chunk_save_load(mock_batch_embedding, mock_edgar_file):
     """
     mock_edgar_file.side_effect = mock_file_content
     mock_batch_embedding.return_value = mock_json_dict(
-        f"embeddings/{embedding_model}_{embedding_dimension}/1002427/0001133228-24-004879.json"
+        "embeddings/text-embedding-005_768/1002427/0001133228-24-004879.json"
     )
 
     filing = SECFiling(cik="1002427", accession_number="0001133228-24-004879")

@@ -266,8 +266,8 @@ def parse_cli():
     parser.add_argument(
         "--extraction-model",
         type=str,
-        default="gemini-2.0-flash",
-        help="Model to use for extraction (default: gemini-2.0-flash)",
+        default="vertex_ai/gemini-2.0-flash-001",
+        help="Model to use for extraction (default: vertex_ai/gemini-2.0-flash-001)",
     )
     parser.add_argument(
         "--topic",

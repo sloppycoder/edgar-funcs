@@ -167,9 +167,8 @@ def _blob_path(
     **_,  # ignore any other parameters
 ):
     # return the path for storing a TextChunkWithEmbedding object
-    return (
-        f"chunks/{chunk_algo_version}/{model}_{dimension}/{cik}/{accession_number}.pickle"
-    )
+    model_name = model.split("/")[1] if "/" in model else model
+    return f"chunks/{chunk_algo_version}/{model_name}_{dimension}/{cik}/{accession_number}.pickle"  # noqa E501
 
 
 def _storage_prefix(storage_base_path: str):

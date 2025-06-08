@@ -1,25 +1,15 @@
 import logging
 
-import httpx
-import openai
 import tiktoken
-from google.api_core.exceptions import GoogleAPICallError, ServerError
+from litellm import embedding
+from litellm.exceptions import (
+    APIConnectionError,
+    InternalServerError,
+    RateLimitError,
+)
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
-
-from ..helper import init_vertaxai, openai_client
 
 logger = logging.getLogger(__name__)
-
-_OPENAI_EMBEDDING_MODELS = [
-    "text-embedding-3-small",
-    "text-embedding-3-large",
-    "text-embedding-ada-002",
-]
-_GEMINI_EMBEDDING_MODELS = [
-    "text-embedding-005",
-    "textembedding-gecko@002",
-]
 
 
 def batch_embedding(
@@ -38,12 +28,10 @@ def batch_embedding(
     Returns:
         list[list[float]]: A list of embeddings (one embedding per chunk)
     """
-    if model in _OPENAI_EMBEDDING_MODELS:
-        max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
-    elif model in _GEMINI_EMBEDDING_MODELS:
+    if model.startswith("vertexai/"):
         max_tokens_per_request, max_chunks_per_request = 10000, 200
     else:
-        raise ValueError(f"Unsupported embedding model {model}")
+        max_tokens_per_request, max_chunks_per_request = 8191, 99999  # no limit
 
     # tiktoken does not support Gemini model
     # use OpenAI as stand-in.
@@ -102,73 +90,40 @@ def _call_embedding_api(
     task_type: str,
     dimension: int,
 ) -> list[list[float]]:
-    if model in _OPENAI_EMBEDDING_MODELS:
-        return _call_openai_embedding_api(
-            content,
-            model=model,
-        )
-    elif model in _GEMINI_EMBEDDING_MODELS:
-        return _call_gemini_embedding_api(
-            content,
-            model=model,
-            task_type=task_type,
-            dimensionality=dimension,
-        )
-    else:
-        raise ValueError(f"Unsupported embedding model {model}")
-
-
-class RetriableServerError(Exception):
-    """
-    Indicate server side error when calling an API
-    This can be used to trigger a retry.
-    """
-
-    pass
+    return _call_litellm_embedding_api(
+        content,
+        model=model,
+        task_type=task_type,
+        dimensionality=dimension,
+    )
 
 
 @retry(
     stop=stop_after_attempt(7),
     wait=wait_exponential(multiplier=1, min=1, max=120),
-    retry=retry_if_exception_type(RetriableServerError),
+    retry=retry_if_exception_type(
+        (RateLimitError, APIConnectionError, InternalServerError)
+    ),
 )
-def _call_openai_embedding_api(input_: list[str], model: str) -> list[list[float]]:
-    try:
-        client = openai_client()
-        response = client.embeddings.create(input=input_, model=model)
-        return [item.embedding for item in response.data]
-    except openai.RateLimitError as e:
-        raise RetriableServerError(e)
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code >= 500:
-            raise RetriableServerError(e)
-        else:
-            raise
-
-
-@retry(
-    stop=stop_after_attempt(7),
-    wait=wait_exponential(multiplier=1, min=1, max=120),
-    retry=retry_if_exception_type(RetriableServerError),
-)
-def _call_gemini_embedding_api(
+def _call_litellm_embedding_api(
     content: list[str], model: str, task_type: str, dimensionality: int
 ) -> list[list[float]]:
     try:
-        init_vertaxai()
-        embedding_model = TextEmbeddingModel.from_pretrained(model)
-        inputs = [TextEmbeddingInput(text, task_type=task_type) for text in content]
-        embeddings = embedding_model.get_embeddings(
-            texts=inputs,  # pyright: ignore
-            auto_truncate=True,
-            output_dimensionality=dimensionality,
+        kwargs = {}
+        if model.startswith("vertexai/"):
+            kwargs["task_type"] = task_type
+            kwargs["dimensions"] = dimensionality
+
+        response = embedding(model=model, input=content, **kwargs)
+        return [item["embedding"] for item in response.data]
+    except (RateLimitError, APIConnectionError, InternalServerError) as e:
+        logger.info(f"retrying {model} embedding API call due to {type(e)}: {str(e)}")
+        raise
+    except Exception as e:
+        logger.warning(
+            f"Non-retryable error calling {model} embedding API: {type(e)}: {str(e)}"
         )
-        return [e.values for e in embeddings]
-    except GoogleAPICallError as e:
-        if isinstance(e, ServerError):
-            raise RetriableServerError(e)
-        else:
-            raise
+        raise
 
 
 def _truncate_chunk(chunk: str, encoding, max_tokens: int) -> str:

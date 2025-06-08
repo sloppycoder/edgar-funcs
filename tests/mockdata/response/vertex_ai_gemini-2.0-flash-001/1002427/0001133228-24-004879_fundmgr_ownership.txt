@@ -1,0 +1,36 @@
+{
+  "ownership_info_present": true,
+  "managers": [
+    {
+      "name": "Dennis P. Lynch",
+      "fund": "Fund",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "Sam G. Chainani",
+      "fund": "Fund",
+      "ownership_range": "50,001 - 100,000"
+    },
+    {
+      "name": "Jason C. Yeung",
+      "fund": "Fund",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "Armistead B. Nash",
+      "fund": "Fund",
+      "ownership_range": "Over 1,000,000"
+    },
+    {
+      "name": "David S. Cohen",
+      "fund": "Fund",
+      "ownership_range": "10,001 - 50,000"
+    },
+    {
+      "name": "Alexander T. Norton",
+      "fund": "Fund",
+      "ownership_range": "50,001 - 100,000"
+    }
+  ],
+  "notes": "Securities ownership information is as of December 31, 2023."
+}

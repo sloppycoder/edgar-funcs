@@ -4,14 +4,14 @@ from datetime import datetime
 from typing import Optional, Type
 
 import jsonref
-from google.api_core.exceptions import (
-    DeadlineExceeded,
-    InternalServerError,
-    ResourceExhausted,
-    ServiceUnavailable,
-    TooManyRequests,
+import litellm
+from litellm.exceptions import (
+    APIConnectionError,
+    APIError,
+    RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
 )
-from openai import APIConnectionError, APITimeoutError, RateLimitError
 from pydantic import BaseModel
 from tenacity import (
     RetryError,
@@ -20,9 +20,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from vertexai.generative_models import GenerativeModel
-
-from ..helper import init_vertaxai, openai_client
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +27,9 @@ logger = logging.getLogger(__name__)
 def ask_model(
     model: str, prompt: str, responseModelClass: Type[BaseModel]
 ) -> Optional[str]:
-    if not model.startswith("gpt") and not model.startswith("gemini"):
-        raise ValueError(f"Unknown model: {model}")
-
     try:
         start_t = datetime.now()
-        if model.startswith("gemini"):
-            google_schema = _convert_json_schema_to_google_schema(
-                responseModelClass.model_json_schema()
-            )
-            response = _chat_with_gemini(model, prompt, google_schema)
-        else:
-            response = _chat_with_gpt(model, prompt, responseModelClass)
+        response = _chat_with_litellm(model, prompt, responseModelClass)
         elapsed_t = datetime.now() - start_t
         logger.debug(
             f"ask {model} with prompt of {len(prompt)} took {elapsed_t.total_seconds():.2f} seconds"  # noqa E501
@@ -61,80 +49,64 @@ def ask_model(
     retry=retry_if_exception_type(
         (
             RateLimitError,
-            APITimeoutError,
             APIConnectionError,
+            Timeout,
+            ServiceUnavailableError,
+            APIError,
         )
     ),
 )
-def _chat_with_gpt(
+def _chat_with_litellm(
     model_name: str,
     prompt: str,
     responseModelClass: Type[BaseModel],
 ) -> Optional[str]:
-    client = openai_client()
-
     try:
-        response = client.responses.parse(
+        # Prepare response format based on model type
+        if model_name.startswith("vertex_ai/gemini"):
+            # For Gemini models, use response_schema format
+            google_schema = _convert_json_schema_to_google_schema(
+                responseModelClass.model_json_schema()
+            )
+            response_format = {"type": "json_object", "response_schema": google_schema}
+            max_tokens = 4096
+        else:
+            # For OpenAI models, use response_format
+            response_format = {"type": "json_object"}
+            max_tokens = 8192
+
+        response = litellm.completion(
             model=model_name,
+            messages=[{"role": "user", "content": prompt}],
             temperature=0,
-            input=[{"role": "user", "content": prompt}],
-            max_output_tokens=8192,
-            text_format=responseModelClass,
+            max_tokens=max_tokens,
+            response_format=response_format,
         )
 
-        if response.output_parsed:
-            return response.output_parsed.model_dump_json()
-
-    except (RateLimitError, APITimeoutError, APIConnectionError) as e:
-        logging.info(f"retrying OpenAI API call due to {type(e)}")
-        raise
-    except Exception as e:
-        logging.warning(f"Error calling OpenAI API: {type(e)},{str(e)}")
-
-    return None
-
-
-@retry(
-    stop=stop_after_attempt(7),
-    wait=wait_exponential(multiplier=1, min=4, max=120),
-    retry=retry_if_exception_type(
-        (
-            DeadlineExceeded,  # timeout
-            ServiceUnavailable,  # transient unavailability
-            TooManyRequests,  # rate limit exceeded
-            ResourceExhausted,  # quota or rate limit exceeded
-            InternalServerError,  # 500-level errors
-        )
-    ),
-)
-def _chat_with_gemini(model_name: str, prompt: str, output_schema) -> Optional[str]:
-    try:
-        init_vertaxai()
-        model = GenerativeModel(model_name)
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 4096,
-                "temperature": 0,
-                "top_p": 0.95,
-                "response_mime_type": "application/json",
-                "response_schema": output_schema,
-            },
-        )
-        return response.text
+        content = response.choices[0].message.content
+        if content:
+            # Validate the response matches the expected schema
+            try:
+                parsed_data = responseModelClass.model_validate_json(content)
+                return parsed_data.model_dump_json()
+            except Exception as e:
+                logger.warning(f"Response validation failed: {e}")
+                return content
 
     except (
-        DeadlineExceeded,  # timeout
-        ServiceUnavailable,  # transient unavailability
-        ResourceExhausted,  # quota or rate limit exceeded
-        TooManyRequests,  # rate limit exceeded
-        InternalServerError,  # 500-level errors
+        RateLimitError,
+        APIConnectionError,
+        Timeout,
+        ServiceUnavailableError,
+        APIError,
     ) as e:
-        logging.info(f"retrying Gemini API call due to {type(e)}")
+        logger.info(f"retrying {model_name} API call due to {type(e)}: {str(e)}")
         raise
     except Exception as e:
-        logging.warning(f"Error calling Gemini API: {type(e)},{str(e)}")
+        logger.warning(f"Non-retryable error calling {model_name}: {type(e)}: {str(e)}")
         return None
+
+    return None
 
 
 def _convert_json_schema_to_google_schema(json_schema: dict) -> dict:  # noqa: C901

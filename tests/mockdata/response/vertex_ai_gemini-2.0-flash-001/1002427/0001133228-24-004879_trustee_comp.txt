@@ -1,0 +1,116 @@
+{
+  "compensation_info_present": true,
+  "notes": "The snippet provides compensation details for the Trustees of Morgan Stanley Funds. It includes their compensation from the fund and the fund complex, as well as information on deferred compensation. It also mentions additional compensation for committee chairpersons and reimbursement for travel expenses. The amounts shown in this column represent the aggregate compensation before deferral with respect to the Fund’s fiscal year.",
+  "trustees": [
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "2158",
+      "fund_group_compensation": "400000",
+      "job_title": "Trustee",
+      "name": "Frank L. Bowman",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "903",
+      "fund_compensation": "1806",
+      "fund_group_compensation": "335000",
+      "job_title": "Trustee",
+      "name": "Frances L. Cashman",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "2077",
+      "fund_group_compensation": "385000",
+      "job_title": "Trustee",
+      "name": "Kathleen A. Dennis",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "2075",
+      "fund_group_compensation": "385000",
+      "job_title": "Trustee",
+      "name": "Nancy C. Everett",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "1806",
+      "fund_group_compensation": "335000",
+      "job_title": "Trustee",
+      "name": "Eddie A. Grier",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "2237",
+      "fund_group_compensation": "415000",
+      "job_title": "Trustee",
+      "name": "Jakki L. Haussler",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "2077",
+      "fund_group_compensation": "385000",
+      "job_title": "Trustee",
+      "name": "Manuel H. Johnson",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "862",
+      "fund_compensation": "1806",
+      "fund_group_compensation": "335000",
+      "job_title": "Trustee",
+      "name": "Joseph J. Kearns",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "2077",
+      "fund_compensation": "2077",
+      "fund_group_compensation": "385000",
+      "job_title": "Trustee",
+      "name": "Michael F. Klein",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "1806",
+      "fund_group_compensation": "335000",
+      "job_title": "Trustee",
+      "name": "Patricia A. Maleski",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    },
+    {
+      "deferred_compensation": "null",
+      "fund_compensation": "3399",
+      "fund_group_compensation": "630000",
+      "job_title": "Trustee",
+      "name": "W. Allen Reed",
+      "year": "2023",
+      "other_compensation_amount": "null",
+      "other_compensation_type": "null"
+    }
+  ]
+}
