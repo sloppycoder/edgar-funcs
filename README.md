@@ -103,7 +103,8 @@ LIMIT 1000;
 uv sync --group notebook
 ```
 
-# a notebook that is used to investigate extraction
-# results when changing prompt to use structured output
-# as an exmple only
-marimo edit notebooks/r
+a notebook that is used to investigate extraction results when changing prompt to use structured output as an exmple only
+
+```shell
+marimo edit notebooks
+```
