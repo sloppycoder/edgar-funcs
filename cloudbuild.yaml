@@ -1,5 +1,5 @@
 substitutions:
-  _SM_PROJECT_ID: "edgar-ai"
+  _PROJECT_ID: "edgar-ai"
   _REGION: "us-central1"
   _RUNTIME: "python312"
   _EXTRACTION_RESULT_TOPIC: "edgarai-extraction-result"
@@ -7,7 +7,7 @@ substitutions:
   _LOG_LEVEL: "DEBUG"
   _SERVICE_ACCOUNT: "edgar-dev@edgar-ai.iam.gserviceaccount.com"
   _OPENAI_API_KEY_SECRET: "projects/1049830028293/secrets/openai-api-key:latest"
-  _DOCKER_IMAGE: "gcr.io/edgar-ai/edgar-processor-stage"
+  _DOCKER_IMAGE: "gcr.io/edgar-ai/edgar-processor"
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -44,7 +44,7 @@ steps:
     args:
       - "-c"
       - |
-        gcloud run deploy edgar-processor-stage \
+        gcloud run deploy edgar-processor \
           --image=${_DOCKER_IMAGE} \
           --region=${_REGION} \
           --platform=managed \
@@ -55,4 +55,4 @@ steps:
           --memory=4Gi \
           --timeout=900s \
           --update-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET} \
-          --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_TOPIC=${_EXTRACTION_RESULT_TOPIC},VERTEXAI_LOCATION=${_REGION},VERTEXAI_PROJECT=edgar-ai
+          --set-env-vars=LOG_LEVEL=${_LOG_LEVEL},STORAGE_PREFIX=${_STORAGE_PREFIX},EXTRACTION_RESULT_TOPIC=${_EXTRACTION_RESULT_TOPIC},VERTEXAI_LOCATION=${_REGION},VERTEXAI_PROJECT=${_PROJECT_ID}
