@@ -7,14 +7,9 @@ from edgar_funcs.rag.extract.fundmgr import extract_fundmgr_ownership_from_filin
 from edgar_funcs.rag.extract.trustee import extract_trustee_comp_from_filing
 from tests.utils import mockdata_path
 
-pytest.skip(
-    reason="""
-    Skip entire file by default. Run these tests only for updating mock responses,
-    after changing the prompt or parameters to completion API.
-    To run these tests, comment out this skip statement.
-    """,
-    allow_module_level=True,
-)
+update_fundmgr_mocks = False
+update_trustee_mocks = False
+
 
 # Setup extraction functions
 extract_fundmgr_func = partial(
@@ -32,6 +27,10 @@ extract_trustee_func = partial(
 )
 
 
+@pytest.mark.skipif(
+    not update_fundmgr_mocks,
+    reason="only run for updating mock response file after changing parameters to ask_model",  # noqa: E501
+)
 @pytest.mark.parametrize(
     "extraction_model", ["gpt-4o-mini", "vertex_ai/gemini-2.0-flash-001"]
 )
@@ -67,6 +66,10 @@ def test_update_mock_response_fundmgr(extraction_model):
             f.write(formatted_response)
 
 
+@pytest.mark.skipif(
+    not update_trustee_mocks,
+    reason="only run for updating mock response file after changing parameters to ask_model",  # noqa: E501
+)
 @pytest.mark.parametrize(
     "extraction_model", ["vertex_ai/gemini-2.0-flash-001", "gpt-4o-mini"]
 )
@@ -102,6 +105,10 @@ def test_update_mock_response_trustee_html_filing(extraction_model):
             f.write(formatted_response)
 
 
+@pytest.mark.skipif(
+    not update_trustee_mocks,
+    reason="only run for updating mock response file after changing parameters to ask_model",  # noqa: E501
+)
 @pytest.mark.parametrize(
     "extraction_model", ["gpt-4o-mini", "vertex_ai/gemini-2.0-flash-001"]
 )
