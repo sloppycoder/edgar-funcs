@@ -183,8 +183,6 @@ jinja2==3.1.6
     #   spacy
 jiter==0.9.0
     # via openai
-jsonref==1.1.0
-    # via edgar-funcs (pyproject.toml)
 jsonschema==4.24.0
     # via litellm
 jsonschema-specifications==2025.4.1

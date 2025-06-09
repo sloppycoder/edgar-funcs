@@ -24,7 +24,6 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "flask>=2.3.3",
     "google-cloud-pubsub>=2.29.0",
-    "jsonref>=1.1.0",
 ]
 
 
