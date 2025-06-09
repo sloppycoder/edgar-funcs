@@ -10,7 +10,8 @@
       "Bash(python:*)",
       "WebFetch(domain:docs.litellm.ai)",
       "Bash(rg:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebFetch(domain:docs.pytest.org)"
     ],
     "deny": []
   }
