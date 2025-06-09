@@ -1,78 +1,96 @@
 {
   "compensation_info_present": true,
-  "notes": "The snippet provides compensation details for Trustees from the Fund for the fiscal year ended January 31, 2004, and also mentions compensation paid by the Fund Complex for the calendar year ended December 31, 2003. It also mentions additional compensation for committee chairmen and deputy chairmen, as well as travel and other out-of-pocket expenses. The snippet also discusses a Deferred Compensation Plan.",
   "trustees": [
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Michael Bozic",
+      "job_title": "Trustee",
       "fund_compensation": "668",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Member of the Governance Committee",
-      "name": "Michael Bozic",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Charles A. Fiumefreddo",
+      "job_title": "Chairman of the Boards",
       "fund_compensation": "2267",
       "fund_group_compensation": "N/A",
-      "job_title": "Chairman of the Boards",
-      "name": "Charles A. Fiumefreddo",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
-      "fund_compensation": "668",
-      "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Member of the Governance Committee",
+      "year": "2004",
       "name": "Edwin J. Garn",
-      "year": "2004"
-    },
-    {
-      "deferred_compensation": "N/A",
+      "job_title": "Trustee",
       "fund_compensation": "668",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Member of the Insurance Committee",
-      "name": "Wayne E. Hedien",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
+      "year": "2004",
+      "name": "Wayne E. Hedien",
+      "job_title": "Trustee",
+      "fund_compensation": "668",
+      "fund_group_compensation": "N/A",
       "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
+    },
+    {
+      "year": "2004",
+      "name": "James F. Higgins",
+      "job_title": "Trustee",
       "fund_compensation": "0",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee",
-      "name": "James F. Higgins",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Manuel H. Johnson",
+      "job_title": "Trustee",
       "fund_compensation": "972",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Chairman of the Audit Committee",
-      "name": "Dr. Manuel H. Johnson",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Joseph J. Kearns",
+      "job_title": "Trustee",
       "fund_compensation": "179",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Deputy Chairman of the Audit Committee",
-      "name": "Joseph J. Kearns",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Michael Nugent",
+      "job_title": "Trustee",
       "fund_compensation": "862",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Chairman of the Insurance Committee",
-      "name": "Michael Nugent",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     },
     {
-      "deferred_compensation": "N/A",
+      "year": "2004",
+      "name": "Fergus Reid",
+      "job_title": "Trustee",
       "fund_compensation": "179",
       "fund_group_compensation": "N/A",
-      "job_title": "Trustee, Member of the Audit Committee, Chairman of the Governance Committee",
-      "name": "Fergus Reid",
-      "year": "2004"
+      "deferred_compensation": "N/A",
+      "other_compensation_type": null,
+      "other_compensation_amount": null
     }
-  ]
+  ],
+  "notes": "The snippet contains compensation information for the Fund's Trustees for the fiscal year ended January 31, 2004. It also mentions compensation paid by the Fund Complex for the calendar year ended December 31, 2003, but does not provide a table with the amounts. The snippet also describes the Deferred Compensation Plan for Independent Trustees. The job titles were inferred from the footnotes."
 }
