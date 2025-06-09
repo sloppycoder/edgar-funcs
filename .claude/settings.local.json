@@ -11,7 +11,8 @@
       "WebFetch(domain:docs.litellm.ai)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "WebFetch(domain:docs.pytest.org)"
+      "WebFetch(domain:docs.pytest.org)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
