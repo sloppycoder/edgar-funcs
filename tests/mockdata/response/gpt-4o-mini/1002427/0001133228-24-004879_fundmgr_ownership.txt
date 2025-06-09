@@ -4,33 +4,33 @@
     {
       "name": "Dennis P. Lynch",
       "fund": "Fund",
-      "ownership_range": "Over 1,000,000"
+      "ownership_range": "over 1000000"
     },
     {
       "name": "Sam G. Chainani",
       "fund": "Fund",
-      "ownership_range": "50,001 - 100,000"
+      "ownership_range": "50001-100000"
     },
     {
       "name": "Jason C. Yeung",
       "fund": "Fund",
-      "ownership_range": "Over 1,000,000"
+      "ownership_range": "over 1000000"
     },
     {
       "name": "Armistead B. Nash",
       "fund": "Fund",
-      "ownership_range": "Over 1,000,000"
+      "ownership_range": "over 1000000"
     },
     {
       "name": "David S. Cohen",
       "fund": "Fund",
-      "ownership_range": "10,001 - 50,000"
+      "ownership_range": "10001-50000"
     },
     {
       "name": "Alexander T. Norton",
       "fund": "Fund",
-      "ownership_range": "50,001 - 100,000"
+      "ownership_range": "50001-100000"
     }
   ],
-  "notes": "Securities ownership information is as of December 31, 2023."
+  "notes": "Ownership information is as of December 31, 2023."
 }

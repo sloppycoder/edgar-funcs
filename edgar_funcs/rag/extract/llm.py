@@ -86,13 +86,15 @@ def _chat_with_litellm(
             response_format=responseModelClass,
         )
 
-        parsed_data = response.choices[0].message.parsed
-        if parsed_data:
-            return parsed_data.model_dump_json()
-
-        # Fallback to content if parsed is not available
         content = response.choices[0].message.content
-        return content
+        if content:
+            # Validate the response matches the expected schema
+            try:
+                parsed_data = responseModelClass.model_validate_json(content)
+                return parsed_data.model_dump_json()
+            except Exception as e:
+                logger.warning(f"Response validation failed: {e}")
+                return content
 
     except (
         RateLimitError,
